@@ -1,11 +1,14 @@
 .navigation {
   position: relative;
   z-index: 1000;
-  background: transparent;
+  background: rgba(10, 14, 39, 0.8);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  border-bottom: 1px solid rgba(0, 255, 136, 0.1);
   padding: 1rem 0;
   transition: opacity 0.4s ease, transform 0.4s ease;
-  opacity: 0; /* page-load start */
-  transform: translateY(-12px); /* subtle slide from top */
+  opacity: 0;
+  transform: translateY(-12px);
 }
 
 /* Activate on page load */
@@ -18,6 +21,9 @@ body.page-loaded .navigation {
   display: flex;
   justify-content: space-between;
   align-items: center;
+  max-width: 1400px;
+  margin: 0 auto;
+  padding: 0 2rem;
 }
 
 .nav-logo {
@@ -26,9 +32,15 @@ body.page-loaded .navigation {
 }
 
 .logo-image {
-  height: 40px;
+  height: 50px;
   width: auto;
   display: block;
+  filter: drop-shadow(0 0 10px rgba(0, 255, 136, 0.3));
+  transition: filter 0.3s ease;
+}
+
+.logo-image:hover {
+  filter: drop-shadow(0 0 15px rgba(0, 255, 136, 0.5));
 }
 
 .nav-items {
@@ -39,19 +51,20 @@ body.page-loaded .navigation {
 .nav-item {
   background: none;
   border: none;
-  color: #888;
-  font-size: 22px;
-  font-weight: 500;
-  letter-spacing: normal;
+  color: #9ca3af;
+  font-size: 0.9rem;
+  font-weight: 600;
+  letter-spacing: 0.5px;
   cursor: pointer;
   padding: 0.5rem 1rem;
   position: relative;
   transition: all 0.3s ease;
+  text-transform: uppercase;
 }
 
 .nav-item:hover,
 .nav-item.hovered {
-  color: white;
+  color: #00ff88;
   transform: translateY(-2px);
 }
 
@@ -62,9 +75,10 @@ body.page-loaded .navigation {
   left: 50%;
   width: 0;
   height: 2px;
-  background: #dc2626;
+  background: linear-gradient(90deg, #00ff88, #00d4ff);
   transition: all 0.3s ease;
   transform: translateX(-50%);
+  box-shadow: 0 0 10px rgba(0, 255, 136, 0.5);
 }
 
 .nav-item:hover::after,
@@ -80,7 +94,7 @@ body.page-loaded .navigation {
 .nav-icon {
   background: none;
   border: none;
-  color: #888;
+  color: #9ca3af;
   cursor: pointer;
   padding: 0.5rem;
   border-radius: 50%;
@@ -89,24 +103,33 @@ body.page-loaded .navigation {
 }
 
 .nav-icon:hover {
-  color: white;
-  background: rgba(220, 38, 127, 0.1);
+  color: #00ff88;
+  background: rgba(0, 255, 136, 0.1);
   transform: scale(1.1);
+}
+
+.whatsapp-btn:hover {
+  color: #00ff88;
+  box-shadow: 0 0 15px rgba(0, 255, 136, 0.4);
 }
 
 /* Mobile Responsive */
 @media (max-width: 768px) {
+  .nav-content {
+    padding: 0 1rem;
+  }
+
   .nav-items {
     gap: 1rem;
   }
   
   .nav-item {
-    font-size: 0.8rem;
+    font-size: 0.75rem;
     padding: 0.4rem 0.8rem;
   }
   
-  .nav-logo {
-    font-size: 1.2rem;
+  .logo-image {
+    height: 40px;
   }
 }
 
