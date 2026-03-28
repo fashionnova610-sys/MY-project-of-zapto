@@ -1,28 +1,33 @@
-import React from "react";
+import React, { useState } from "react";
 import "./MainTitle.css";
 
 const MainTitle = () => {
+  const [amount, setAmount] = useState('');
+  const [action, setAction] = useState('sell'); // 'sell' or 'buy'
+  
   const rates = {
     topLeft: ["USDT", "BTC"],
     topRight: ["ETH", "XAF"]
   };
 
+  const handleAmountChange = (e) => {
+    const value = e.target.value;
+    if (value === '' || /^\d*\.?\d*$/.test(value)) {
+      setAmount(value);
+    }
+  };
+
   const handleWhatsAppClick = () => {
-    const message = encodeURIComponent(`👋 Welcome to Zaptopay!
+    const actionText = action === 'sell' ? 'sell' : 'buy';
+    const amountText = amount ? `$${amount}` : '$100';
+    
+    const message = encodeURIComponent(`👋 Hi Zaptopay!
 
-Your trusted partner for secure Crypto-to-XAF exchange. 🔒
+I want to ${actionText} ${amountText} USDT.
 
-📊 TODAY'S LIVE RATES (USDT)
-🟢 YOU SELL to us: 573 XAF/$
-🔴 YOU BUY from us: 598 XAF/$
+Please provide me with the payment details.
 
-💡 HOW TO START:
-Tell us what you need in one quick message. 
-For example: "I want to sell $100 USDT" or "I want to buy $50 of BTC."
-
-⏱️ A real, verified Zaptopay agent is standing by to process your transaction safely in under 2 minutes.
-
-How can we help you today? 👇`);
+Thank you!`);
     window.open(`https://wa.me/237676339620?text=${message}`, '_blank');
   };
 
