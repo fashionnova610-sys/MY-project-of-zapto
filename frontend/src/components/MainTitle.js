@@ -61,6 +61,50 @@ Thank you!`);
                 ZAPTOPAY
               </h1>
               <p className="hero-subtitle">Trade Crypto. Instant XAF. Zero Fear.</p>
+              
+              {/* Interactive Amount Input */}
+              <div className="interactive-trade">
+                <div className="trade-action-selector">
+                  <button 
+                    className={`action-btn ${action === 'sell' ? 'active' : ''}`}
+                    onClick={() => setAction('sell')}
+                  >
+                    Sell
+                  </button>
+                  <button 
+                    className={`action-btn ${action === 'buy' ? 'active' : ''}`}
+                    onClick={() => setAction('buy')}
+                  >
+                    Buy
+                  </button>
+                </div>
+                
+                <div className="amount-input-wrapper">
+                  <span className="dollar-sign">$</span>
+                  <input
+                    type="text"
+                    value={amount}
+                    onChange={handleAmountChange}
+                    placeholder="100"
+                    className="amount-input"
+                  />
+                  <span className="currency-label">USDT</span>
+                </div>
+                
+                <div className="instant-quote">
+                  {amount && parseFloat(amount) > 0 ? (
+                    <>
+                      <span className="quote-label">{action === 'sell' ? 'You get' : 'You pay'}:</span>
+                      <span className="quote-value">
+                        {(parseFloat(amount) * (action === 'sell' ? 573 : 598)).toLocaleString()} XAF
+                      </span>
+                    </>
+                  ) : (
+                    <span className="quote-placeholder">Enter amount to see instant quote</span>
+                  )}
+                </div>
+              </div>
+              
               <div className="rate-display">
                 <div className="rate-item sell">
                   <span className="rate-label">YOU SELL</span>
@@ -74,7 +118,7 @@ Thank you!`);
               </div>
               <button className="cta-button" onClick={handleWhatsAppClick}>
                 <span className="cta-icon">💬</span>
-                Start Trading on WhatsApp
+                {amount ? `Trade $${amount} on WhatsApp` : 'Start Trading on WhatsApp'}
               </button>
             </div>
           </div>
