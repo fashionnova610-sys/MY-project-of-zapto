@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import { MessageCircle, Menu } from "lucide-react";
 import "./Navigation.css";
-import zaptoPayLogo from "../assets/branding/zaptopay-logo.png";
+import zaptoPayLogo from "../assets/branding/logo-primary.png";
 
 const Navigation = () => {
   const [hoveredItem, setHoveredItem] = useState(null);
