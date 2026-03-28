@@ -163,6 +163,137 @@ body.page-loaded .hero-subtitle {
   transition-delay: 0.3s;
 }
 
+/* Interactive Trade Section */
+.interactive-trade {
+  margin: 2rem 0;
+  opacity: 0;
+  transform: translateY(10px);
+  transition: opacity 0.6s ease, transform 0.6s ease;
+}
+
+body.page-loaded .interactive-trade {
+  opacity: 1;
+  transform: none;
+  transition-delay: 0.4s;
+}
+
+.trade-action-selector {
+  display: flex;
+  gap: 0.5rem;
+  justify-content: center;
+  margin-bottom: 1rem;
+}
+
+.action-btn {
+  padding: 0.75rem 2rem;
+  background: rgba(26, 31, 58, 0.6);
+  border: 1px solid rgba(0, 255, 136, 0.2);
+  border-radius: 12px;
+  color: #9ca3af;
+  font-weight: 600;
+  font-size: 1rem;
+  cursor: pointer;
+  transition: all 0.3s;
+}
+
+.action-btn:hover {
+  border-color: rgba(0, 255, 136, 0.4);
+  color: #ffffff;
+}
+
+.action-btn.active {
+  background: linear-gradient(135deg, #00ff88 0%, #00d4ff 100%);
+  border-color: transparent;
+  color: #0a0e27;
+  box-shadow: 0 4px 15px rgba(0, 255, 136, 0.3);
+}
+
+.amount-input-wrapper {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 1rem;
+}
+
+.dollar-sign {
+  position: absolute;
+  left: 50%;
+  transform: translateX(-120px);
+  font-size: 2rem;
+  font-weight: 700;
+  color: #00ff88;
+  pointer-events: none;
+  text-shadow: 0 0 20px rgba(0, 255, 136, 0.5);
+}
+
+.amount-input {
+  width: 280px;
+  padding: 1.25rem 3rem;
+  background: rgba(10, 14, 39, 0.8);
+  border: 2px solid rgba(0, 255, 136, 0.3);
+  border-radius: 16px;
+  color: #ffffff;
+  font-size: 2rem;
+  font-weight: 700;
+  text-align: center;
+  font-family: 'Space Grotesk', sans-serif;
+  transition: all 0.3s;
+}
+
+.amount-input:focus {
+  outline: none;
+  border-color: #00ff88;
+  box-shadow: 0 0 30px rgba(0, 255, 136, 0.3);
+}
+
+.amount-input::placeholder {
+  color: rgba(255, 255, 255, 0.3);
+}
+
+.currency-label {
+  position: absolute;
+  right: 50%;
+  transform: translateX(120px);
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: #00d4ff;
+  pointer-events: none;
+  text-shadow: 0 0 20px rgba(0, 212, 255, 0.5);
+}
+
+.instant-quote {
+  text-align: center;
+  padding: 1rem;
+  background: rgba(0, 255, 136, 0.05);
+  border: 1px solid rgba(0, 255, 136, 0.2);
+  border-radius: 12px;
+  min-height: 60px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.75rem;
+}
+
+.quote-label {
+  font-size: 0.9rem;
+  color: #9ca3af;
+  font-weight: 600;
+}
+
+.quote-value {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: #00ff88;
+  text-shadow: 0 0 20px rgba(0, 255, 136, 0.5);
+}
+
+.quote-placeholder {
+  font-size: 0.9rem;
+  color: #9ca3af;
+  font-style: italic;
+}
+
 .rate-display {
   display: flex;
   justify-content: center;
