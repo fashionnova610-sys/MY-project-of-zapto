@@ -7,6 +7,7 @@ import ReferenceDetailsSection from "./components/ReferenceDetailsSection";
 import DeadpoolPosterSection from "./components/DeadpoolPosterSection";
 import BottomPlaceholderSection from "./components/BottomPlaceholderSection";
 import FloatingRedPlaceholder from "./components/FloatingRedPlaceholder";
+import FloatingWhatsApp from "./components/FloatingWhatsApp";
 import WhiteStage from "./components/WhiteStage";
 
 function App() {
@@ -20,6 +21,7 @@ function App() {
         <DeadpoolPosterSection />
         <BottomPlaceholderSection />
       </WhiteStage>
+      <FloatingWhatsApp />
     </>
   );
 
