@@ -53,13 +53,6 @@ module.exports = {
                                 '4': 'hsl(var(--chart-4))',
                                 '5': 'hsl(var(--chart-5))'
                         }
-                        },
-                        zaptopay: {
-                                'vault-navy': '#0a0e27',
-                                'charcoal': '#1a1f3a',
-                                'zap-green': '#00ff88',
-                                'electric-blue': '#00d4ff',
-                                'soft-silver': '#e5e7eb'
                 },
                 keyframes: {
                         'accordion-down': {
