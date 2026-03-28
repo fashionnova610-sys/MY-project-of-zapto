@@ -102,22 +102,22 @@
 # Testing Data - Main Agent and testing sub agent both should log testing data below this section
 #====================================================================================================
 
+user_problem_statement: "Rebrand existing cinematic landing page from Spider-Man theme to Zaptopay crypto exchange platform while maintaining scroll-choreographed structure and animations"
+
 frontend:
-  - task: "Increase font size of specific cast tags to 40px (Tobey Maguire, Andrew Garfield, Zendaya, Tom Holland)"
+  - task: "Update global styling to Zaptopay brand (Space Grotesk font, dark mode, glassmorphism)"
     implemented: true
     working: "NA"
-    file: "frontend/src/components/MainTitle.js, frontend/src/components/MainTitle.css"
+    file: "frontend/src/index.css, frontend/tailwind.config.js"
     stuck_count: 0
     priority: "high"
     needs_retesting: true
     status_history:
       - working: "NA"
         agent: "main"
-        comment: "Added largeNames Set and conditional class to render .large-cast for the four requested names; defined .large-cast { font-size: 40px } in CSS."
+        comment: "Added Space Grotesk font, Zaptopay brand colors (vault-navy, charcoal, zap-green, electric-blue), glassmorphism utilities, and dark mode background (#0a0e27)"
 
-
-frontend:
-  - task: "Replace text logo with provided image in navigation at 40px height"
+  - task: "Rebrand Navigation component with Zaptopay logo and WhatsApp integration"
     implemented: true
     working: "NA"
     file: "frontend/src/components/Navigation.js, frontend/src/components/Navigation.css"
@@ -127,57 +127,60 @@ frontend:
     status_history:
       - working: "NA"
         agent: "main"
-        comment: "Replaced text logo with external image URL from user-provided asset. Added .logo-image with fixed height: 40px; width: auto to preserve aspect ratio."
+        comment: "Replaced Daily Bugle logo with Zaptopay logo, updated nav items (RATES, HOW IT WORKS, SECURITY, CONTACT), added WhatsApp button with pre-filled message, applied glassmorphic styling with green accents"
 
-
-user_problem_statement: "Update typography to use 'Bebas Neue' as the default font for all elements without changing spacing/layout/styles"
-frontend:
-  - task: "Apply 'Bebas Neue' as global default font"
+  - task: "Transform GenreTags to feature badges (INSTANT, SECURE, 24/7)"
     implemented: true
     working: "NA"
-    file: "frontend/src/index.css, frontend/public/index.html"
+    file: "frontend/src/components/GenreTags.js, frontend/src/components/GenreTags.css"
     stuck_count: 0
     priority: "high"
     needs_retesting: true
     status_history:
       - working: "NA"
         agent: "main"
-        comment: "Set global font-family to 'Bebas Neue' via universal selector with !important in index.css and updated inline font-family for the emergent badge in public/index.html. No layout or spacing changes made."
+        comment: "Replaced movie genres with crypto exchange features, added icons, applied glassmorphic pill design with green glow effects"
+
+  - task: "Rebrand MainTitle to Zaptopay hero with rates display and WhatsApp CTA"
+    implemented: true
+    working: "NA"
+    file: "frontend/src/components/MainTitle.js, frontend/src/components/MainTitle.css"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: true
+    status_history:
+      - working: "NA"
+        agent: "main"
+        comment: "Replaced SPIDERMAN title with ZAPTOPAY, added hero subtitle 'Trade Crypto. Instant XAF. Zero Fear.', implemented rate display (YOU SELL: 573 XAF/$, YOU BUY: 598 XAF/$), added WhatsApp CTA button, replaced Spider-Man image with crypto icons in scroller, applied gradient glow effects"
+
+  - task: "Create floating WhatsApp button with pulse animation"
+    implemented: true
+    working: "NA"
+    file: "frontend/src/components/FloatingWhatsApp.js, frontend/src/components/FloatingWhatsApp.css"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: true
+    status_history:
+      - working: "NA"
+        agent: "main"
+        comment: "Created fixed bottom-right WhatsApp button with gradient background, pulse ring animation, appears after scrolling 300px, opens WhatsApp with pre-filled Zaptopay message"
+
 metadata:
   created_by: "main_agent"
-  version: "1.0"
-  test_sequence: 1
-  run_ui: false
+  version: "2.0"
+  test_sequence: 2
+  run_ui: true
 
 test_plan:
   current_focus:
-    - "Verify typography uses Bebas Neue across all components"
+    - "Visual verification of Zaptopay branding (logo, colors, typography)"
+    - "Test WhatsApp integration (navigation button, hero CTA, floating button)"
+    - "Verify rate display visibility and styling"
+    - "Check responsive design on mobile"
   stuck_tasks: []
   test_all: false
   test_priority: "high_first"
 
 agent_communication:
   - agent: "main"
-    message: "Typography update implemented. Please visually verify that 'Bebas Neue' applies globally without layout regressions."
-  - agent: "testing"
-    message: "No backend changes were made in this step. Backend requires no testing and status remains unaffected. Only frontend typography changes were implemented." 
-
-- agent: "main"
-  message: "Updated ReferenceSection release paragraph content per user, set max-width to 374px and right-aligned at all breakpoints. No position changes."
-
-
-frontend:
-  - task: "Add four avatars left + center vertical arrows + 120px right image in ReferenceDetailsSection"
-    implemented: true
-    working: "NA"
-    file: "frontend/src/components/ReferenceDetailsSection.js, frontend/src/components/ReferenceDetailsSection.css"
-    stuck_count: 0
-    priority: "high"
-    needs_retesting: true
-    status_history:
-      - working: "NA"
-        agent: "main"
-        comment: "Implemented media row under headline with 4x40px avatars (8px gap), stacked decorative vertical arrows, and 120px right disc; mobile scales avatars to 32px and right disc to 80px (E1)."
-
-- agent: "main"
-  message: "ReferenceDetailsSection media row shipped per user choices A1,B1,C1,D1,E1 (placeholders for images). Please visually verify alignment under headline, spacing, and responsive scaling."
+    message: "Phase 1 complete: Hero section rebranded to Zaptopay with dark mode + glassmorphism. Logo integrated, WhatsApp CTAs functional, rate display implemented. Next: rebrand remaining sections (ReferenceSection, ReferenceDetailsSection, etc.). Need visual verification before proceeding."
