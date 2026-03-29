@@ -1,34 +1,51 @@
-.App-logo {
-    height: 40vmin;
-    pointer-events: none;
+/* 2026 Design Utilities */
+.gradient-text {
+  background: var(--grad-main);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
 }
 
-@media (prefers-reduced-motion: no-preference) {
-    .App-logo {
-        animation: App-logo-spin infinite 20s linear;
-    }
+.text-glow-primary {
+  text-shadow: 0 0 10px var(--primary-glow);
 }
 
-.App-header {
-    background-color: #0f0f10;
-    min-height: 100vh;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    font-size: calc(10px + 2vmin);
-    color: white;
+.text-glow-secondary {
+  text-shadow: 0 0 10px var(--secondary-glow);
 }
 
-.App-link {
-    color: #61dafb;
+/* Page Transitions & Layout */
+.App {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
 }
 
-@keyframes App-logo-spin {
-    from {
-        transform: rotate(0deg);
-    }
-    to {
-        transform: rotate(360deg);
-    }
+main {
+  flex: 1;
+}
+
+/* Animations */
+@keyframes pulse-slow {
+  0%, 100% { opacity: 0.3; transform: scale(1); }
+  50% { opacity: 0.5; transform: scale(1.1); }
+}
+
+.bg-blob-animate {
+  animation: pulse-slow 10s ease-in-out infinite;
+}
+
+/* 3D Effects */
+.perspective-1000 {
+  perspective: 1000px;
+}
+
+.preserve-3d {
+  transform-style: preserve-3d;
+}
+
+/* Selection */
+::selection {
+  background: var(--primary);
+  color: var(--bg-deep);
 }

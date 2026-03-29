@@ -1,184 +1,259 @@
 import React, { useState, useEffect } from 'react';
-import { Calculator, ArrowRight } from 'lucide-react';
-import './EnhancedRateCalculator.css';
+import { Calculator, ArrowRight, Zap, RefreshCw, TrendingUp, MessageCircle } from 'lucide-react';
+import { motion } from 'framer-motion';
+import axios from 'axios';
+import { CONFIG } from '../utils/config';
 
 const EnhancedRateCalculator = () => {
-  const [amount, setAmount] = useState('');
-  const [selectedCrypto, setSelectedCrypto] = useState('USDT');
-  const [mode, setMode] = useState('sell');
-  const [result, setResult] = useState(null);
-  const [cryptoPrices, setCryptoPrices] = useState({});
-  const [xafRates, setXafRates] = useState({ sell: 573, buy: 598 });
-  const [loading, setLoading] = useState(false);
+    // 1. Assets Configuration
+    const cryptos = [
+        { name: 'Tether (USDT)', symbol: 'USDT', icon: '₮', color: 'text-primary' },
+        { name: 'Bitcoin (BTC)', symbol: 'BTC', icon: '₿', color: 'text-amber-500' },
+        { name: 'Ethereum (ETH)', symbol: 'ETH', icon: 'Ξ', color: 'text-blue-500' },
+        { name: 'Binance Coin (BNB)', symbol: 'BNB', icon: 'BNB', color: 'text-yellow-500' },
+        { name: 'Solana (SOL)', symbol: 'SOL', icon: 'SOL', color: 'text-cyan-500' }
+    ];
 
-  const cryptos = [
-    { symbol: 'USDT', name: 'Tether', id: 'tether' },
-    { symbol: 'BTC', name: 'Bitcoin', id: 'bitcoin' },
-    { symbol: 'ETH', name: 'Ethereum', id: 'ethereum' }
-  ];
+    // 2. State
+    const [selectedCrypto, setSelectedCrypto] = useState('USDT');
+    const [amount, setAmount] = useState('');
+    const [mode, setMode] = useState('sell'); // 'sell' or 'buy'
+    const [loading, setLoading] = useState(false);
+    const [result, setResult] = useState(null);
+    const [rates, setRates] = useState({ sell: 0, buy: 0 });
+    const [hasFetchedRates, setHasFetchedRates] = useState(false);
+    const [cryptoPrices, setCryptoPrices] = useState({ USDT: 1, BTC: 95000, ETH: 3500, BNB: 600, SOL: 180 });
 
-  // Fetch live crypto prices
-  useEffect(() => {
-    const fetchPrices = async () => {
-      try {
-        const ids = cryptos.map(c => c.id).join(',');
-        const response = await fetch(
-          `https://api.coingecko.com/api/v3/simple/price?ids=${ids}&vs_currencies=usd`
-        );
-        const data = await response.json();
-        const prices = {};
-        cryptos.forEach(crypto => {
-          prices[crypto.symbol] = data[crypto.id]?.usd || 1;
-        });
-        setCryptoPrices(prices);
-      } catch (error) {
-        console.error('Error fetching prices:', error);
-        // Fallback prices
-        setCryptoPrices({ USDT: 1, BTC: 95000, ETH: 3500 });
-      }
+    // 3. Data Fetching
+    useEffect(() => {
+        const fetchPrices = async () => {
+            try {
+                const res = await axios.get('https://api.coingecko.com/api/v3/simple/price', {
+                    params: {
+                        ids: 'tether,bitcoin,ethereum,binancecoin,solana',
+                        vs_currencies: 'usd'
+                    }
+                });
+                const data = res.data;
+                const newPrices = {
+                    USDT: data.tether?.usd || 1,
+                    BTC: data.bitcoin?.usd || 95000,
+                    ETH: data.ethereum?.usd || 3500,
+                    BNB: data.binancecoin?.usd || 600,
+                    SOL: data.solana?.usd || 180
+                };
+                setCryptoPrices(newPrices);
+            } catch (error) {
+                console.error('Error fetching crypto prices:', error);
+            }
+        };
+
+        const fetchXafRates = async () => {
+            try {
+                const res = await axios.get(`${CONFIG.API_BASE}/rates/current?currency=USDT`, {
+                    headers: { 'Cache-Control': 'no-cache' }
+                });
+                if (res.data) {
+                    console.log(`[Rates] Sync Successful: USDT -> ${res.data.sell_rate}/${res.data.buy_rate}`);
+                    setRates({
+                        sell: res.data.sell_rate,
+                        buy: res.data.buy_rate
+                    });
+                    setHasFetchedRates(true);
+                }
+            } catch (error) {
+                console.error('[Rates] Sync Failed:', error);
+            }
+        };
+
+        fetchPrices();
+        fetchXafRates();
+        const interval = setInterval(() => { fetchPrices(); fetchXafRates(); }, 60000);
+        return () => clearInterval(interval);
+    }, []);
+
+    // 4. Logic
+    const calculate = (e) => {
+        if (e) e.preventDefault();
+        const num = parseFloat(amount);
+        if (isNaN(num) || num <= 0) {
+            setResult(null);
+            return;
+        }
+
+        setLoading(true);
+        setTimeout(() => {
+            // Fix: Use the selectedCrypto directly as it is now 'USDT', 'BTC', etc.
+            const cryptoPrice = cryptoPrices[selectedCrypto] || 1;
+            const xafRate = mode === 'sell' ? rates.sell : rates.buy;
+            
+            const totalXAF = num * cryptoPrice * xafRate;
+            
+            setResult({
+                xafValue: totalXAF,
+                cryptoAmount: num,
+                symbol: selectedCrypto,
+                cryptoPrice,
+                xafRate
+            });
+            setLoading(false);
+        }, 600);
     };
 
-    fetchPrices();
-    const interval = setInterval(fetchPrices, 60000);
-    return () => clearInterval(interval);
-  }, []);
+    return (
+        <section id="calculator" className="py-24 relative overflow-hidden">
+            <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 -z-10 w-full h-full bg-primary/5 blur-[150px] rounded-full"></div>
+            
+            <div className="container max-w-5xl">
+                <div className="flex flex-col xl:flex-row gap-12 items-start xl:items-center">
+                    {/* Left: Info */}
+                    <div data-aos="fade-right">
+                        <h2 className="text-4xl md:text-5xl font-black mb-6 uppercase tracking-tight">
+                            Smart <span className="text-primary italic">Rate</span> Calculator
+                        </h2>
+                        <p className="text-text-muted text-lg mb-8 max-w-lg">
+                            Get real-time quotes combining global market prices with our elite local XAF rates. Instant, accurate, and ready for execution.
+                        </p>
+                        
+                        <div className="space-y-4">
+                            <div className="flex items-center gap-4 text-sm font-bold tracking-widest text-text-muted">
+                                <TrendingUp size={18} className="text-primary" />
+                                <span>LIVE PRICES FROM COINGECKO</span>
+                            </div>
+                            <div className="flex items-center gap-4 text-sm font-bold tracking-widest text-text-muted">
+                                <RefreshCw size={18} className="text-primary" />
+                                <span>AUTO-REFRESH EVERY 60 SECONDS</span>
+                            </div>
+                        </div>
+                    </div>
 
-  // Fetch XAF rates from backend
-  useEffect(() => {
-    const fetchXafRates = async () => {
-      try {
-        const response = await fetch(`${process.env.REACT_APP_BACKEND_URL}/api/rates/current`);
-        const data = await response.json();
-        setXafRates({ sell: data.sell_rate, buy: data.buy_rate });
-      } catch (error) {
-        console.error('Error fetching XAF rates:', error);
-      }
-    };
+                    {/* Right: Calculator Card */}
+                    <div className="glass p-6 md:p-10 border-white/10 relative group w-full xl:max-w-xl min-w-0" data-aos="fade-left">
+                        <div className="absolute -top-4 -right-4 w-24 h-24 bg-primary/20 blur-3xl rounded-full opacity-0 group-hover:opacity-100 transition-opacity"></div>
+                        
+                        {/* Sell/Buy Toggle */}
+                        <div className="flex p-1 bg-white/5 rounded-none border border-white/10 mb-8">
+                            <button
+                                onClick={() => { setMode('sell'); setResult(null); }}
+                                className={`flex-1 py-4 text-[10px] font-black uppercase tracking-[0.12em] transition-all ${mode === 'sell' ? 'bg-primary text-black' : 'text-white/70 hover:text-white'}`}
+                            >
+                                I am Selling
+                            </button>
+                            <button
+                                onClick={() => { setMode('buy'); setResult(null); }}
+                                className={`flex-1 py-4 text-[10px] font-black uppercase tracking-[0.12em] transition-all ${mode === 'buy' ? 'bg-primary text-black' : 'text-white/70 hover:text-white'}`}
+                            >
+                                I am Buying
+                            </button>
+                        </div>
 
-    fetchXafRates();
-    const interval = setInterval(fetchXafRates, 300000); // Every 5 minutes
-    return () => clearInterval(interval);
-  }, []);
+                        {/* Asset Grid */}
+                        <div className="mb-8">
+                            <label className="text-[10px] font-black text-text-muted uppercase tracking-[0.2em] mb-4 block underline decoration-primary/30 underline-offset-4">Select Crypto Asset</label>
+                            <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
+                                {cryptos.map((crypto) => (
+                                    <button
+                                        key={crypto.symbol}
+                                        onClick={() => { setSelectedCrypto(crypto.symbol); setResult(null); }}
+                                        className={`py-4 px-1 glass border-white/10 flex flex-col items-center justify-center gap-2 transition-all hover:border-primary/50 min-w-0 ${selectedCrypto === crypto.symbol ? 'bg-primary/10 border-primary ring-1 ring-primary/30' : ''}`}
+                                    >
+                                        <span className={`text-xl font-black shrink-0 ${crypto.color}`}>{crypto.icon}</span>
+                                        <span className="text-[8px] font-bold tracking-widest uppercase text-white/90">{crypto.symbol}</span>
+                                    </button>
+                                ))}
+                            </div>
+                        </div>
 
-  const calculate = () => {
-    const num = parseFloat(amount);
-    if (isNaN(num) || num <= 0) {
-      setResult(null);
-      return;
-    }
+                        {/* Amount Input */}
+                        <div className="mb-8 space-y-2">
+                            <label className="text-[10px] font-black text-text-muted uppercase tracking-[0.2em] mb-4 block underline decoration-primary/30 underline-offset-4">Enter Amount to {mode === 'sell' ? 'Sell' : 'Buy'}</label>
+                            <div className="relative">
+                                <input
+                                    type="number"
+                                    value={amount}
+                                    onChange={(e) => { setAmount(e.target.value); setResult(null); }}
+                                    placeholder="0.00"
+                                    className="w-full bg-white/10 border border-white/20 p-6 text-2xl font-black text-white outline-none focus:border-primary focus:bg-white/15 transition-all pr-28 placeholder:text-white/60"
+                                />
+                                <span className="absolute right-6 top-1/2 -translate-y-1/2 text-primary font-black uppercase text-sm tracking-widest opacity-80">{selectedCrypto}</span>
+                            </div>
+                        </div>
 
-    setLoading(true);
-    setTimeout(() => {
-      const cryptoPrice = cryptoPrices[selectedCrypto] || 1;
-      const xafRate = mode === 'sell' ? xafRates.sell : xafRates.buy;
-      
-      let calculated;
-      if (mode === 'sell') {
-        // User sells crypto: crypto amount × crypto price × XAF rate
-        calculated = num * cryptoPrice * xafRate;
-      } else {
-        // User buys crypto: crypto amount × crypto price × XAF rate
-        calculated = num * cryptoPrice * xafRate;
-      }
+                        <button
+                            onClick={calculate}
+                            disabled={!amount || loading}
+                            className="w-full py-6 bg-primary text-black font-black uppercase tracking-[0.12em] hover:bg-white transition-all duration-500 shadow-[0_15px_40px_rgba(0,255,136,0.3)] disabled:opacity-40 flex items-center justify-center gap-3 mb-10 overflow-hidden relative group"
+                        >
+                            <div className="absolute inset-0 bg-white/20 translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-1000"></div>
+                            <div className="relative z-10 flex items-center justify-center gap-3">
+                                {loading ? (
+                                    <>
+                                        <RefreshCw className="w-5 h-5 animate-spin" />
+                                        SYNCING_RATES
+                                    </>
+                                ) : (
+                                    <>
+                                        CALCULATE QUOTE <Zap size={18} className="fill-current" />
+                                    </>
+                                )}
+                            </div>
+                        </button>
 
-      setResult({
-        xaf: calculated.toFixed(0),
-        cryptoPrice: cryptoPrice,
-        xafRate: xafRate
-      });
-      setLoading(false);
-    }, 300);
-  };
+                        {/* Result Area */}
+                        {result && hasFetchedRates && (
+                            <motion.div 
+                                initial={{ opacity: 0, scale: 0.95 }}
+                                animate={{ opacity: 1, scale: 1 }}
+                                className="space-y-6"
+                            >
+                                <div className="glass bg-primary/5 border-primary/20 p-8 text-center relative overflow-hidden">
+                                    <div className="absolute top-0 right-0 p-2 opacity-10">
+                                        <MessageCircle size={100} />
+                                    </div>
+                                    <span className="text-[10px] font-black uppercase tracking-[0.18em] text-primary mb-2 block">You Recieve Approximately</span>
+                                    <div className="text-5xl md:text-6xl font-black mb-2 tracking-tighter">
+                                        {Math.round(result.xafValue).toLocaleString()}
+                                        <span className="text-xl ml-2 font-light opacity-50">XAF</span>
+                                    </div>
+                                    <div className="w-20 h-1 bg-primary/30 mx-auto mt-6"></div>
+                                    
+                                    <div className="flex justify-between mt-8 text-[10px] font-black tracking-widest uppercase text-text-muted">
+                                        <div className="text-left">
+                                            <p className="opacity-50 mb-1">Market Price</p>
+                                            <p className="text-white">${result.cryptoPrice.toLocaleString()}</p>
+                                        </div>
+                                        <div className="text-right">
+                                            <p className="opacity-50 mb-1">Zapto Rate</p>
+                                            <p className="text-white">{result.xafRate} XAF/$</p>
+                                        </div>
+                                    </div>
+                                </div>
 
-  const handleAmountChange = (e) => {
-    const value = e.target.value;
-    if (value === '' || /^\d*\.?\d*$/.test(value)) {
-      setAmount(value);
-      setResult(null);
-    }
-  };
-
-  return (
-    <div className="enhanced-rate-calculator">
-      <div className="calculator-header">
-        <Calculator className="calc-icon" size={24} />
-        <h3>Smart Rate Calculator</h3>
-      </div>
-
-      <div className="calc-mode-toggle">
-        <button
-          className={`mode-btn ${mode === 'sell' ? 'active' : ''}`}
-          onClick={() => { setMode('sell'); setResult(null); }}
-        >
-          I'm Selling
-        </button>
-        <button
-          className={`mode-btn ${mode === 'buy' ? 'active' : ''}`}
-          onClick={() => { setMode('buy'); setResult(null); }}
-        >
-          I'm Buying
-        </button>
-      </div>
-
-      <div className="crypto-selector">
-        <label>Select Cryptocurrency</label>
-        <div className="crypto-buttons">
-          {cryptos.map((crypto) => (
-            <button
-              key={crypto.symbol}
-              className={`crypto-btn ${selectedCrypto === crypto.symbol ? 'active' : ''}`}
-              onClick={() => { setSelectedCrypto(crypto.symbol); setResult(null); }}
-            >
-              <span className="crypto-symbol">{crypto.symbol}</span>
-              <span className="crypto-price">
-                ${cryptoPrices[crypto.symbol]?.toLocaleString() || '---'}
-              </span>
-            </button>
-          ))}
-        </div>
-      </div>
-
-      <div className="calc-input-group">
-        <label>Amount in {selectedCrypto}</label>
-        <div className="input-wrapper">
-          <span className="currency-symbol">{selectedCrypto}</span>
-          <input
-            type="text"
-            value={amount}
-            onChange={handleAmountChange}
-            placeholder="0.00"
-            className="calc-input"
-          />
-        </div>
-      </div>
-
-      <button className="calc-btn" onClick={calculate} disabled={loading}>
-        {loading ? 'Calculating...' : 'Calculate'}
-        <ArrowRight size={20} />
-      </button>
-
-      {result && (
-        <div className="calc-result">
-          <div className="result-label">
-            {mode === 'sell' ? 'You receive' : 'You pay'}
-          </div>
-          <div className="result-value">
-            {parseInt(result.xaf).toLocaleString()} XAF
-          </div>
-          <div className="result-breakdown">
-            <div className="breakdown-item">
-              <span>Crypto Price:</span>
-              <span>${result.cryptoPrice.toLocaleString()}</span>
+                                <a 
+                                    href={`https://wa.me/${CONFIG.SUPPORT_WHATSAPP}?text=${encodeURIComponent(
+                                        `Hey Zaptopay! ⚡ I just calculated a trade of ${result.cryptoAmount} ${result.symbol} for approx ${Math.round(result.xafValue).toLocaleString()} XAF. I want to proceed NOW! 🚀`
+                                    )}`}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    className="block"
+                                >
+                                    <button className="w-full py-6 bg-primary text-black font-black uppercase tracking-[0.15em] flex items-center justify-center gap-4 hover:bg-white transition-all shadow-[0_20px_50px_rgba(0,255,136,0.4)] animate-pulse-whatsapp">
+                                        <div className="w-8 h-8 rounded-full bg-black/10 flex items-center justify-center">
+                                            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-message-circle"><path d="M7.9 20A9 9 0 1 0 4 16.1L2 22Z"></path></svg>
+                                        </div>
+                                        Message Agent on WhatsApp ASAP
+                                    </button>
+                                </a>
+                                <p className="text-center text-[10px] font-black text-primary uppercase tracking-[0.18em] animate-pulse">
+                                    Direct VIP Support Available 24/7
+                                </p>
+                            </motion.div>
+                        )}
+                    </div>
+                </div>
             </div>
-            <div className="breakdown-item">
-              <span>XAF Rate:</span>
-              <span>{result.xafRate} XAF/$</span>
-            </div>
-          </div>
-        </div>
-      )}
-    </div>
-  );
+        </section>
+    );
 };
 
 export default EnhancedRateCalculator;

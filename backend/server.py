@@ -1,7 +1,7 @@
-from fastapi import FastAPI, APIRouter, HTTPException, Depends, Header
+from fastapi import FastAPI, APIRouter, HTTPException, Depends, Header, Response
 from dotenv import load_dotenv
 from starlette.middleware.cors import CORSMiddleware
-from motor.motor_asyncio import AsyncIOMotorClient
+from supabase import create_client, Client
 import os
 import logging
 from pathlib import Path
@@ -11,15 +11,29 @@ import uuid
 from datetime import datetime, timezone
 import hashlib
 import secrets
-
+import re
+import requests
+import json
 
 ROOT_DIR = Path(__file__).parent
 load_dotenv(ROOT_DIR / '.env')
 
-# MongoDB connection
-mongo_url = os.environ['MONGO_URL']
-client = AsyncIOMotorClient(mongo_url)
-db = client[os.environ['DB_NAME']]
+# Supabase connection
+supabase_url = os.environ.get("SUPABASE_URL")
+supabase_key = os.environ.get("SUPABASE_KEY")
+
+if not supabase_url or not supabase_key:
+    logging.error("SUPABASE_URL or SUPABASE_KEY not set in environment!")
+    # For local dev fallback if not set yet, but should be set in .env
+    supabase_url = "https://flpxaxovqcpxzyotnvwe.supabase.co"
+    supabase_key = "sb_publishable_ftR4a1zz0RU79mG2INJEPw_-OjFQrdq" # Anon key
+
+supabase: Client = create_client(supabase_url, supabase_key)
+
+# Configure OpenRouter
+openrouter_api_key = os.environ.get("OPENROUTER_API_KEY")
+if not openrouter_api_key:
+    logging.warning("OPENROUTER_API_KEY not set. AI features will be disabled.")
 
 # Create the main app without a prefix
 app = FastAPI()
@@ -32,8 +46,8 @@ api_router = APIRouter(prefix="/api")
 
 class Rate(BaseModel):
     id: str = Field(default_factory=lambda: str(uuid.uuid4()))
-    sell_rate: float  # Rate when user sells crypto to us
-    buy_rate: float   # Rate when user buys crypto from us
+    sell_rate: float
+    buy_rate: float
     currency: str = "USDT"
     updated_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
     updated_by: str = "admin"
@@ -47,35 +61,45 @@ class AdminLogin(BaseModel):
     username: str
     password: str
 
-class AdminSession(BaseModel):
-    token: str
-    username: str
-    created_at: datetime
-
-class ContactMessage(BaseModel):
-    id: str = Field(default_factory=lambda: str(uuid.uuid4()))
-    name: str
-    email: str
-    message: str
-    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
-    status: str = "new"  # new, read, replied
-
 class ContactMessageCreate(BaseModel):
     name: str
     email: str
     message: str
 
+class BotChatRequest(BaseModel):
+    message: str
+    session_id: Optional[str] = None
+    location: Optional[str] = "Unknown"
+
 class FAQItem(BaseModel):
     id: str = Field(default_factory=lambda: str(uuid.uuid4()))
     question: str
     answer: str
-    order: int = 0
+    order_index: int = 0
 
 class WhatsAppBotResponse(BaseModel):
     id: str = Field(default_factory=lambda: str(uuid.uuid4()))
     trigger_keywords: List[str]
     response_message: str
     is_active: bool = True
+
+class Testimonial(BaseModel):
+    id: str = Field(default_factory=lambda: str(uuid.uuid4()))
+    name: str
+    role: str = "Verified User"
+    content: str
+    rating: int = 5
+    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+
+class Transaction(BaseModel):
+    id: str = Field(default_factory=lambda: str(uuid.uuid4()))
+    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+    amount_usd: float
+    amount_xaf: float
+    coin: str = "USDT"
+    status: str = "completed"
+    is_generated: bool = False
+    tx_hash: Optional[str] = None
 
 
 # ==================== SECURITY ====================
@@ -91,19 +115,19 @@ async def verify_admin_token(authorization: Optional[str] = Header(None)):
         raise HTTPException(status_code=401, detail="Unauthorized")
     
     token = authorization.replace("Bearer ", "")
-    session = await db.admin_sessions.find_one({"token": token}, {"_id": 0})
+    # In a real app, use Supabase Auth. For now, we'll keep the admin_sessions approach in a table.
+    response = supabase.table("admin_sessions").select("*").eq("token", token).execute()
     
-    if not session:
+    if not response.data:
         raise HTTPException(status_code=401, detail="Invalid or expired token")
     
-    return session
+    return response.data[0]
 
 
 # ==================== ADMIN ROUTES ====================
 
 @api_router.post("/admin/login")
 async def admin_login(credentials: AdminLogin):
-    # Default admin credentials (change these!)
     ADMIN_USERNAME = os.environ.get("ADMIN_USERNAME", "admin")
     ADMIN_PASSWORD_HASH = hash_password(os.environ.get("ADMIN_PASSWORD", "zaptopay2025"))
     
@@ -113,15 +137,15 @@ async def admin_login(credentials: AdminLogin):
     if hash_password(credentials.password) != ADMIN_PASSWORD_HASH:
         raise HTTPException(status_code=401, detail="Invalid credentials")
     
-    # Create session
     token = generate_token()
     session = {
         "token": token,
         "username": credentials.username,
-        "created_at": datetime.now(timezone.utc)
+        "created_at": datetime.now(timezone.utc).isoformat()
     }
     
-    await db.admin_sessions.insert_one(session)
+    # Needs to ensure admin_sessions table exists (I'll add it in migration)
+    supabase.table("admin_sessions").insert(session).execute()
     
     return {
         "token": token,
@@ -131,50 +155,60 @@ async def admin_login(credentials: AdminLogin):
 
 @api_router.post("/admin/logout")
 async def admin_logout(session: dict = Depends(verify_admin_token)):
-    await db.admin_sessions.delete_one({"token": session["token"]})
+    supabase.table("admin_sessions").delete().eq("token", session["token"]).execute()
     return {"message": "Logged out successfully"}
 
 
 # ==================== RATE MANAGEMENT ====================
 
 @api_router.get("/rates/current")
-async def get_current_rates():
-    """Public endpoint - get current exchange rates"""
-    rate = await db.rates.find_one(
-        {"currency": "USDT"},
-        {"_id": 0},
-        sort=[("updated_at", -1)]
-    )
+async def get_current_rates(response: Response, currency: str = "USDT"):
+    # Ensure fresh data by disabling all possible caching
+    response.headers["Cache-Control"] = "no-cache, no-store, must-revalidate"
+    response.headers["Pragma"] = "no-cache"
+    response.headers["Expires"] = "0"
     
-    if not rate:
-        # Return default rates if none exist
+    # Query the absolute latest row based on created_at (Standard Supabase)
+    res = supabase.table("rates").select("*").eq("currency", currency.upper()).order("created_at", desc=True).limit(1).execute()
+    
+    if not res.data:
+        logging.warning(f"[Rates] No data found in database for {currency}. Serving emergency defaults.")
+        # Minimal emergency defaults only if DB is empty
+        defaults = {"USDT": {"sell": 573, "buy": 598}, "BTC": {"sell": 570, "buy": 605}}
+        val = defaults.get(currency.upper(), {"sell": 573, "buy": 598})
         return {
-            "sell_rate": 573,
-            "buy_rate": 598,
-            "currency": "USDT",
-            "updated_at": datetime.now(timezone.utc).isoformat()
+            "sell_rate": val["sell"],
+            "buy_rate": val["buy"],
+            "currency": currency.upper(),
+            "updated_at": datetime.now(timezone.utc).isoformat(),
+            "source": "emergency_fallback"
         }
     
-    return rate
+    current_rate = res.data[0]
+    logging.info(f"[Rates] Serving LIVE data for {currency}: {current_rate['sell_rate']}/{current_rate['buy_rate']}")
+    return current_rate
 
 @api_router.put("/admin/rates")
 async def update_rates(
     rate_update: RateUpdate,
     session: dict = Depends(verify_admin_token)
 ):
-    """Admin only - update exchange rates"""
-    new_rate = Rate(
-        sell_rate=rate_update.sell_rate,
-        buy_rate=rate_update.buy_rate,
-        currency=rate_update.currency,
-        updated_by=session["username"]
-    )
+    new_rate = {
+        "sell_rate": rate_update.sell_rate,
+        "buy_rate": rate_update.buy_rate,
+        "currency": rate_update.currency.upper(),
+        "updated_at": datetime.now(timezone.utc).isoformat(),
+        "updated_by": session["username"]
+    }
     
-    await db.rates.insert_one(new_rate.dict())
+    # Insert new row into history table
+    result = supabase.table("rates").insert(new_rate).execute()
+    
+    logging.info(f"[Admin] Rates broadcasted by {session['username']}: {new_rate['currency']} -> S:{new_rate['sell_rate']} / B:{new_rate['buy_rate']}")
     
     return {
-        "message": "Rates updated successfully",
-        "rate": new_rate.dict()
+        "message": "Protocol Synced: New Rates Broadcasted successfully",
+        "rate": result.data[0] if result.data else new_rate
     }
 
 @api_router.get("/admin/rates/history")
@@ -182,201 +216,221 @@ async def get_rate_history(
     limit: int = 50,
     session: dict = Depends(verify_admin_token)
 ):
-    """Admin only - get rate change history"""
-    rates = await db.rates.find(
-        {},
-        {"_id": 0}
-    ).sort("updated_at", -1).limit(limit).to_list(limit)
-    
-    return rates
+    response = supabase.table("rates").select("*").order("created_at", desc=True).limit(limit).execute()
+    return response.data
 
 
 # ==================== CONTACT MESSAGES ====================
 
 @api_router.post("/contact")
 async def submit_contact_message(message: ContactMessageCreate):
-    """Public endpoint - submit contact form"""
-    contact = ContactMessage(**message.dict())
-    await db.contact_messages.insert_one(contact.dict())
-    
-    return {
-        "message": "Message sent successfully",
-        "id": contact.id
+    contact = {
+        "name": message.name,
+        "email": message.email,
+        "message": message.message,
+        "status": "new",
+        "created_at": datetime.now(timezone.utc).isoformat()
     }
+    supabase.table("contact_messages").insert(contact).execute()
+    
+    # Auto-email to rosvelmelong@gmail.com
+    # [TO BE IMPLEMENTED WITH aiosmtplib]
+    
+    return {"message": "Message sent successfully"}
 
 @api_router.get("/admin/contacts")
 async def get_contact_messages(
     status: Optional[str] = None,
     session: dict = Depends(verify_admin_token)
 ):
-    """Admin only - get contact messages"""
-    query = {}
+    query = supabase.table("contact_messages").select("*")
     if status:
-        query["status"] = status
+        query = query.eq("status", status)
     
-    messages = await db.contact_messages.find(
-        query,
-        {"_id": 0}
-    ).sort("created_at", -1).to_list(100)
-    
-    return messages
-
-@api_router.patch("/admin/contacts/{message_id}/status")
-async def update_contact_status(
-    message_id: str,
-    status: str,
-    session: dict = Depends(verify_admin_token)
-):
-    """Admin only - update message status"""
-    result = await db.contact_messages.update_one(
-        {"id": message_id},
-        {"$set": {"status": status}}
-    )
-    
-    if result.modified_count == 0:
-        raise HTTPException(status_code=404, detail="Message not found")
-    
-    return {"message": "Status updated"}
+    response = query.order("created_at", desc=True).execute()
+    return response.data
 
 
 # ==================== FAQ MANAGEMENT ====================
 
 @api_router.get("/faq")
 async def get_faqs():
-    """Public endpoint - get all FAQs"""
-    faqs = await db.faqs.find(
-        {},
-        {"_id": 0}
-    ).sort("order", 1).to_list(100)
-    
-    return faqs
+    response = supabase.table("faqs").select("*").order("order_index", desc=False).execute()
+    return response.data
 
 @api_router.post("/admin/faq")
 async def create_faq(
     faq: FAQItem,
     session: dict = Depends(verify_admin_token)
 ):
-    """Admin only - create FAQ"""
-    await db.faqs.insert_one(faq.dict())
-    return {"message": "FAQ created", "faq": faq.dict()}
+    data = faq.dict()
+    data.pop("id") # Let DB handle it or use the id we generated
+    supabase.table("faqs").insert(data).execute()
+    return {"message": "FAQ created"}
 
-@api_router.put("/admin/faq/{faq_id}")
-async def update_faq(
-    faq_id: str,
-    faq: FAQItem,
-    session: dict = Depends(verify_admin_token)
-):
-    """Admin only - update FAQ"""
-    result = await db.faqs.update_one(
-        {"id": faq_id},
-        {"$set": faq.dict()}
-    )
-    
-    if result.modified_count == 0:
-        raise HTTPException(status_code=404, detail="FAQ not found")
-    
-    return {"message": "FAQ updated"}
 
-@api_router.delete("/admin/faq/{faq_id}")
-async def delete_faq(
-    faq_id: str,
-    session: dict = Depends(verify_admin_token)
-):
-    """Admin only - delete FAQ"""
-    result = await db.faqs.delete_one({"id": faq_id})
+# ==================== TESTIMONIALS ====================
+
+@api_router.get("/testimonials")
+async def get_testimonials(limit: int = 200):
+    response = supabase.table("testimonials").select("*").eq("approved", True).order("created_at", desc=True).limit(limit).execute()
+    return response.data
+
+@api_router.get("/admin/testimonials/pending")
+async def get_pending_testimonials(session: dict = Depends(verify_admin_token)):
+    response = supabase.table("testimonials").select("*").eq("approved", False).order("created_at", desc=True).execute()
+    return response.data
+
+@api_router.put("/admin/testimonials/{id}/approve")
+async def approve_testimonial(id: str, session: dict = Depends(verify_admin_token)):
+    response = supabase.table("testimonials").update({"approved": True}).eq("id", id).execute()
+    return {"message": "Testimonial approved", "data": response.data}
+
+@api_router.delete("/admin/testimonials/{id}")
+async def delete_testimonial(id: str, session: dict = Depends(verify_admin_token)):
+    supabase.table("testimonials").delete().eq("id", id).execute()
+    return {"message": "Testimonial deleted"}
+
+@api_router.post("/testimonials")
+async def submit_testimonial(testimonial: Testimonial):
+    data = testimonial.dict()
+    # Ensure role is set if empty
+    if not data.get("role"):
+        data["role"] = "Verified User"
     
-    if result.deleted_count == 0:
-        raise HTTPException(status_code=404, detail="FAQ not found")
+    # Simple spam protection/cleanup
+    data["content"] = data["content"].strip()
+    data["name"] = data["name"].strip()
     
-    return {"message": "FAQ deleted"}
+    if len(data["content"]) < 3 or len(data["name"]) < 2:
+        raise HTTPException(status_code=400, detail="Invalid submission")
+
+    data["created_at"] = datetime.now(timezone.utc).isoformat()
+    data["approved"] = False # Default to pending review
+    supabase.table("testimonials").insert(data).execute()
+    return {"message": "Testimonial submitted successfully, pending review", "testimonial": data}
 
 
 # ==================== WHATSAPP BOT ====================
 
 @api_router.get("/bot/responses")
 async def get_bot_responses():
-    """Public endpoint - get active bot responses"""
-    responses = await db.bot_responses.find(
-        {"is_active": True},
-        {"_id": 0}
-    ).to_list(100)
-    
-    return responses
+    response = supabase.table("bot_responses").select("*").eq("is_active", True).execute()
+    return response.data
 
-@api_router.post("/admin/bot/response")
-async def create_bot_response(
-    response: WhatsAppBotResponse,
-    session: dict = Depends(verify_admin_token)
-):
-    """Admin only - create bot auto-response"""
-    await db.bot_responses.insert_one(response.dict())
-    return {"message": "Bot response created", "response": response.dict()}
+@api_router.post("/bot/chat")
+async def bot_chat(request: BotChatRequest):
+    user_msg = request.message.lower()
+    
+    # 1. Simple Keyword Matching Fallback
+    local_responses = supabase.table("bot_responses").select("*").eq("is_active", True).execute()
+    for resp in local_responses.data:
+        for keyword in resp["trigger_keywords"]:
+            if keyword.lower() in user_msg:
+                return {"response": resp["response_message"], "source": "keyword"}
 
-@api_router.get("/admin/bot/responses")
-async def get_all_bot_responses(
-    session: dict = Depends(verify_admin_token)
-):
-    """Admin only - get all bot responses"""
-    responses = await db.bot_responses.find(
-        {},
-        {"_id": 0}
-    ).to_list(100)
-    
-    return responses
+    # 2. AI Intelligence with OpenRouter
+    if openrouter_api_key:
+        try:
+            # Fetch current rates for context
+            latest_rate_res = supabase.table("rates").select("*").eq("currency", "USDT").order("created_at", desc=True).limit(1).execute()
+            latest_rate = {"sell": 573, "buy": 598}
+            if latest_rate_res.data:
+                latest_rate = {"sell": latest_rate_res.data[0]['sell_rate'], "buy": latest_rate_res.data[0]['buy_rate']}
 
-@api_router.put("/admin/bot/response/{response_id}")
-async def update_bot_response(
-    response_id: str,
-    response: WhatsAppBotResponse,
-    session: dict = Depends(verify_admin_token)
-):
-    """Admin only - update bot response"""
-    result = await db.bot_responses.update_one(
-        {"id": response_id},
-        {"$set": response.dict()}
-    )
-    
-    if result.modified_count == 0:
-        raise HTTPException(status_code=404, detail="Response not found")
-    
-    return {"message": "Bot response updated"}
+            system_prompt = f"""
+            You are ZaptoBot, the elite AI Assistant for Zaptopay (v2.1). 
+            Zaptopay is the #1 platform in Africa for exchanging Crypto (USDT, BTC, ETH, SOL, BNB) for XAF (CFA Francs).
 
-@api_router.delete("/admin/bot/response/{response_id}")
-async def delete_bot_response(
-    response_id: str,
-    session: dict = Depends(verify_admin_token)
-):
-    """Admin only - delete bot response"""
-    result = await db.bot_responses.delete_one({"id": response_id})
+            WEBSITE KNOWLEDGE BASE:
+            - Location: Based in Douala and Yaoundé, Cameroon. Serving West Africa.
+            - Services: Buy and Sell crypto for XAF.
+            - Payout Methods: MTN Mobile Money, Orange Money, Bank Transfer.
+            - Speed: Transactions in 5-15 minutes ("Light Speed").
+            - Security: 100% Secure, Trusted by thousands.
+
+            CURRENT LIVE MARKET RATES (USDT/XAF):
+            🟢 WE BUY FROM USER AT: {latest_rate['sell']} XAF / 1 USDT
+            🔴 WE SELL TO USER AT: {latest_rate['buy']} XAF / 1 USDT
+            
+            INSTRUCTIONS:
+            1. **ESTIMATION**: If user mentions an amount (e.g., "$100" or "50 USDT"), calculate the XAF equivalent manually using the rates above.
+               - If they are SELLING to us (e.g., "I have 100 USDT"), use {latest_rate['sell']} XAF.
+               - If they are BUYING from us (e.g., "I need $50"), use {latest_rate['buy']} XAF.
+            2. **TONE**: Swift, professional, uses emojis (⚡, 💸, 🔒).
+            3. **LIMITS**: Max 4 sentences.
+            4. **LANGUAGE**: Detect language. Respond in French if user uses French.
+            """
+            
+            headers = {
+                "Authorization": f"Bearer {openrouter_api_key}",
+                "HTTP-Referer": "https://zaptopay.com", # Required for OpenRouter
+                "X-Title": "Zaptopay AI Agent",        # Optional for OpenRouter
+                "Content-Type": "application/json"
+            }
+            
+            payload = {
+                "model": "google/gemini-2.0-flash-001", # High quality, fast choice
+                "messages": [
+                    {"role": "system", "content": system_prompt},
+                    {"role": "user", "content": request.message}
+                ],
+                "temperature": 0.7
+            }
+            
+            response = requests.post(
+                "https://openrouter.ai/api/v1/chat/completions",
+                headers=headers,
+                data=json.dumps(payload),
+                timeout=15
+            )
+            
+            if response.status_code == 200:
+                result = response.json()
+                ai_msg = result['choices'][0]['message']['content']
+                return {"response": ai_msg.strip(), "source": "openrouter", "rate_used": latest_rate}
+            else:
+                logging.error(f"OpenRouter Error: {response.text}")
+                return {"response": "I'm having a protocol sync issue. Please ask me about rates or contact support!", "source": "error"}
+                
+        except Exception as e:
+            logging.error(f"AI Exception: {e}")
+            return {"response": "I'm having trouble processing that right now. Please try again or head to WhatsApp support!", "source": "fallback"}
     
-    if result.deleted_count == 0:
-        raise HTTPException(status_code=404, detail="Response not found")
-    
-    return {"message": "Bot response deleted"}
+    return {"response": "Welcome to Zaptopay! How can I help you with your crypto exchange today?", "source": "default"}
+
+
+# ==================== TRANSACTIONS (Public Ledger) ====================
+
+@api_router.get("/transactions")
+async def get_transactions(limit: int = 20):
+    response = supabase.table("transactions").select("*").order("created_at", desc=True).limit(limit).execute()
+    return response.data
+
+
+# ==================== TEAM ====================
+
+@api_router.get("/team")
+async def get_team():
+    response = supabase.table("team_members").select("*").execute()
+    return response.data
 
 
 # ==================== STATISTICS ====================
 
 @api_router.get("/admin/stats")
 async def get_admin_stats(session: dict = Depends(verify_admin_token)):
-    """Admin only - get dashboard statistics"""
-    total_contacts = await db.contact_messages.count_documents({})
-    new_contacts = await db.contact_messages.count_documents({"status": "new"})
-    total_faqs = await db.faqs.count_documents({})
-    active_bot_responses = await db.bot_responses.count_documents({"is_active": True})
+    # Simple count using Supabase REST is a bit verbose, but fine for now
+    contacts_res = supabase.table("contact_messages").select("id", count="exact").execute()
+    faqs_res = supabase.table("faqs").select("id", count="exact").execute()
+    bot_res = supabase.table("bot_responses").select("id", count="exact").eq("is_active", True).execute()
     
-    # Get latest rate
-    latest_rate = await db.rates.find_one(
-        {"currency": "USDT"},
-        {"_id": 0},
-        sort=[("updated_at", -1)]
-    )
+    latest_rate = await get_current_rates()
     
     return {
-        "total_contacts": total_contacts,
-        "new_contacts": new_contacts,
-        "total_faqs": total_faqs,
-        "active_bot_responses": active_bot_responses,
+        "total_contacts": contacts_res.count if contacts_res.count else 0,
+        "total_faqs": faqs_res.count if faqs_res.count else 0,
+        "active_bot_responses": bot_res.count if bot_res.count else 0,
         "latest_rate": latest_rate
     }
 
@@ -385,18 +439,12 @@ async def get_admin_stats(session: dict = Depends(verify_admin_token)):
 
 @api_router.get("/")
 async def root():
-    return {
-        "message": "Zaptopay API",
-        "version": "1.0.0",
-        "status": "operational"
-    }
+    return {"message": "Zaptopay API Powered by Supabase", "version": "2.0.0"}
 
 @api_router.get("/health")
 async def health_check():
     return {"status": "healthy"}
 
-
-# Include the router in the main app
 app.include_router(api_router)
 
 app.add_middleware(
@@ -407,13 +455,6 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# Configure logging
-logging.basicConfig(
-    level=logging.INFO,
-    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
-)
-logger = logging.getLogger(__name__)
-
-@app.on_event("shutdown")
-async def shutdown_db_client():
-    client.close()
+if __name__ == "__main__":
+    import uvicorn
+    uvicorn.run(app, host="0.0.0.0", port=8000)
