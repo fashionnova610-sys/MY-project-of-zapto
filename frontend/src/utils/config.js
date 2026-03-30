@@ -13,14 +13,13 @@ const getApiBase = () => {
                          !window.location.hostname.includes('127.0.0.1');
 
     if (isProduction) {
-        // Return your production backend URL here
-        // If deployed on the same domain or as static + functions, use relative path
-        return "https://zaptopay.netlify.app/api"; // Placeholder - Update if backend is separate
+        // Return relative path for Netlify proxy (/api/* -> backend/*)
+        return "/api"; 
     }
 
     // 3. Local Development (Default)
-    // Automatically use the current hostname but on port 8000 for the FastAPI backend
-    return `http://${window.location.hostname}:8000/api`;
+    // Use the local backend url (FastAPI)
+    return "http://localhost:8000/api";
 };
 
 export const API_BASE_URL = getApiBase();

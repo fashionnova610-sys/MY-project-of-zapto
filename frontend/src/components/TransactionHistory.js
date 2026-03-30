@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import axios from 'axios';
 import { TrendingUp } from 'lucide-react';
+import { API_BASE_URL } from '../utils/config';
 
 const TransactionHistory = () => {
     const [transactions, setTransactions] = useState([]);
@@ -9,7 +10,7 @@ const TransactionHistory = () => {
     useEffect(() => {
         const fetchTransactions = async () => {
             try {
-                const response = await axios.get('http://localhost:8000/api/transactions?limit=10');
+                const response = await axios.get(`${API_BASE_URL}/transactions?limit=10`);
                 setTransactions(response.data);
             } catch (error) {
                 console.error('Error fetching transactions:', error);

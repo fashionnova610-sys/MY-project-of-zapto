@@ -63,7 +63,7 @@ const CryptoTracker = () => {
                 </button>
             </div>
 
-            <div className="space-y-4 flex-1">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 flex-1">
                 {cryptos.map((crypto) => {
                     const priceData = prices[crypto.id];
                     const price = priceData?.usd;

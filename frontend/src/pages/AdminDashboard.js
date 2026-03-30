@@ -5,12 +5,14 @@ import { Shield, TrendingUp, History, Lock, LogOut, ChevronRight, RefreshCw, Che
 import { CONFIG } from '../utils/config';
 
 const AdminDashboard = () => {
-    const [rates, setRates] = useState({ sell_rate: 0, buy_rate: 0 });
+    const [rates, setRates] = useState({ sell_rate: 0, buy_rate: 0, currency: 'USDT' });
+    const [selectedCurrency, setSelectedCurrency] = useState('USDT');
     const [contacts, setContacts] = useState([]);
     const [transactions, setTransactions] = useState([]);
     const [pendingTestimonials, setPendingTestimonials] = useState([]);
     const [loading, setLoading] = useState(true);
     const [updating, setUpdating] = useState(false);
+    const [isBackendOnline, setIsBackendOnline] = useState(true);
     const navigate = useNavigate();
     
     const token = localStorage.getItem('admin_token');
@@ -20,19 +22,22 @@ const AdminDashboard = () => {
         try {
             const config = { headers: { Authorization: `Bearer ${token}` } };
             
-            const [ratesRes, contactRes, transRes, testimonialsRes] = await Promise.all([
-                axios.get(`${CONFIG.API_BASE}/rates/current?currency=USDT`),
+            const [healthRes, ratesRes, contactRes, transRes, testimonialsRes] = await Promise.all([
+                axios.get(`${CONFIG.API_BASE}/health`),
+                axios.get(`${CONFIG.API_BASE}/rates/current?currency=${selectedCurrency}`),
                 axios.get(`${CONFIG.API_BASE}/admin/contacts`, config),
                 axios.get(`${CONFIG.API_BASE}/transactions?limit=10`),
                 axios.get(`${CONFIG.API_BASE}/admin/testimonials/pending`, config)
             ]);
             
+            setIsBackendOnline(healthRes.data?.status === 'healthy');
             setRates(ratesRes.data);
             setContacts(contactRes.data);
             setTransactions(transRes.data);
             setPendingTestimonials(testimonialsRes.data);
         } catch (err) {
             console.error("Dashboard error:", err);
+            setIsBackendOnline(false);
             if (err.response?.status === 401) {
                 navigate('/admin/login');
             }
@@ -40,6 +45,10 @@ const AdminDashboard = () => {
             setLoading(false);
         }
     };
+
+    useEffect(() => {
+        fetchDashboardData();
+    }, [selectedCurrency]);
 
     useEffect(() => {
         if (!token) navigate('/admin/login');
@@ -56,7 +65,7 @@ const AdminDashboard = () => {
             await axios.put(`${CONFIG.API_BASE}/admin/rates`, {
                 sell_rate: rates.sell_rate,
                 buy_rate: rates.buy_rate,
-                currency: "USDT"
+                currency: selectedCurrency
             }, config);
             
             alert("RATES SYNCED TO PRODUCTION CLUSTER");
@@ -114,7 +123,10 @@ const AdminDashboard = () => {
                     </div>
                     <div>
                         <div className="text-sm font-black uppercase tracking-widest">ZAPTO_DASHBOARD</div>
-                        <div className="text-[9px] text-primary font-bold uppercase tracking-[0.2em] mt-1">Operator: {localStorage.getItem('admin_user')} • Verified Session</div>
+                        <div className="flex items-center gap-2 mt-1">
+                            <div className={`w-1.5 h-1.5 rounded-full ${isBackendOnline ? 'bg-primary animate-pulse' : 'bg-red-500'}`}></div>
+                            <div className="text-[9px] text-primary font-bold uppercase tracking-[0.2em]">Operator: {localStorage.getItem('admin_user')} • {isBackendOnline ? 'Verified Session' : 'Offline Mode'}</div>
+                        </div>
                     </div>
                 </div>
                 <button 
@@ -130,9 +142,20 @@ const AdminDashboard = () => {
                 {/* Rate Management Panel */}
                 <div className="lg:col-span-1 space-y-8 h-full">
                     <div className="glass p-10 border-primary/20 h-full">
-                        <div className="flex items-center gap-3 mb-10">
-                            <TrendingUp className="text-primary" size={20} />
-                            <h2 className="text-lg font-black uppercase tracking-widest">Global Rate Sync</h2>
+                        <div className="flex items-center justify-between mb-8">
+                            <div className="flex items-center gap-3">
+                                <TrendingUp className="text-primary" size={20} />
+                                <h2 className="text-lg font-black uppercase tracking-widest">Global Rate Sync</h2>
+                            </div>
+                            <select 
+                                value={selectedCurrency}
+                                onChange={(e) => setSelectedCurrency(e.target.value)}
+                                className="bg-black/40 border border-white/15 px-4 py-2 rounded-lg text-[10px] font-black uppercase tracking-widest focus:outline-none focus:border-primary transition-all text-primary cursor-pointer hover:bg-primary/10"
+                            >
+                                {['USDT', 'BTC', 'ETH', 'SOL', 'BNB'].map(curr => (
+                                    <option key={curr} value={curr} className="bg-black text-white">{curr}</option>
+                                ))}
+                            </select>
                         </div>
 
                         <form onSubmit={updateMarketRates} className="space-y-8">
@@ -145,7 +168,7 @@ const AdminDashboard = () => {
                                         onChange={(e) => setRates({...rates, sell_rate: parseFloat(e.target.value)})}
                                         className="w-full bg-black/40 border border-white/10 rounded-xl px-6 py-5 text-2xl font-black text-primary focus:outline-none focus:border-primary transition-all group-hover:bg-primary/5"
                                     />
-                                    <div className="absolute right-6 top-1/2 -translate-y-1/2 text-[10px] font-black text-text-muted uppercase">XAF/USDT</div>
+                                    <div className="absolute right-6 top-1/2 -translate-y-1/2 text-[10px] font-black text-text-muted uppercase">XAF/{selectedCurrency}</div>
                                 </div>
                             </div>
 
@@ -158,7 +181,7 @@ const AdminDashboard = () => {
                                         onChange={(e) => setRates({...rates, buy_rate: parseFloat(e.target.value)})}
                                         className="w-full bg-black/40 border border-white/10 rounded-xl px-6 py-5 text-2xl font-black text-white focus:outline-none focus:border-primary transition-all group-hover:bg-white/5"
                                     />
-                                    <div className="absolute right-6 top-1/2 -translate-y-1/2 text-[10px] font-black text-text-muted uppercase">XAF/USDT</div>
+                                    <div className="absolute right-6 top-1/2 -translate-y-1/2 text-[10px] font-black text-text-muted uppercase">XAF/{selectedCurrency}</div>
                                 </div>
                             </div>
 
@@ -180,7 +203,7 @@ const AdminDashboard = () => {
                             <div className="flex gap-4">
                                 <Info className="text-primary shrink-0" size={18} />
                                 <div className="text-[10px] text-white/50 leading-relaxed font-bold uppercase tracking-widest">
-                                    Updating these rates will immediately sync with the ZaptoBot and the frontend calculators for all global users.
+                                    Updating these rates will immediately sync with the WhatsApp Preview modal and the frontend calculators for all global users.
                                 </div>
                             </div>
                         </div>
@@ -297,7 +320,17 @@ const AdminDashboard = () => {
                                         <div className="flex justify-between items-start mb-2">
                                             <div>
                                                 <h4 className="text-xs font-black uppercase tracking-widest text-white">{contact.name}</h4>
-                                                <p className="text-[10px] text-primary lowercase mt-1">{contact.email}</p>
+                                                <div className="flex items-center gap-3 mt-1">
+                                                    <p className="text-[10px] text-primary lowercase">{contact.email}</p>
+                                                    <a 
+                                                        href={`https://wa.me/2376?text=Hi ${contact.name}, regarding your Zaptopay inquiry: "${contact.message.substring(0, 50)}..."`} 
+                                                        target="_blank" 
+                                                        rel="noopener noreferrer"
+                                                        className="text-[9px] font-black uppercase tracking-widest text-[#00ff88] hover:underline flex items-center gap-1"
+                                                    >
+                                                        Reply WhatsApp ⚡
+                                                    </a>
+                                                </div>
                                             </div>
                                             <span className="text-[10px] font-bold text-text-muted uppercase tracking-widest">{new Date(contact.created_at).toLocaleDateString()}</span>
                                         </div>

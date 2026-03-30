@@ -104,7 +104,7 @@ const ContactSection = () => {
               <div className="space-y-2">
                 <label className="text-xs font-black uppercase tracking-[0.2em] text-text-muted">Full Name</label>
                 <input 
-                  type="text" 
+                   type="text" 
                   required
                   value={formData.name}
                   onChange={(e) => setFormData({...formData, name: e.target.value})}
@@ -153,7 +153,7 @@ const ContactSection = () => {
               whileTap={{ scale: 0.98 }}
               disabled={isSubmitting}
               type="submit"
-              className={`w-full py-6 bg-white text-black font-black text-sm uppercase tracking-[0.18em] flex items-center justify-center gap-4 hover:bg-white/90 transition-all duration-700 shadow-[0_20px_60px_rgba(255,255,255,0.1)] relative overflow-hidden group ${isSubmitting ? "opacity-70 cursor-not-allowed" : ""}`}
+              className={`w-full py-6 bg-[#00ff88] text-black font-black text-sm uppercase tracking-[0.18em] flex items-center justify-center gap-4 hover:bg-white transition-all duration-700 shadow-[0_0_30px_rgba(0,255,136,0.6)] relative overflow-hidden group ${isSubmitting ? "opacity-70 cursor-not-allowed" : "animate-pulse-whatsapp"}`}
             >
               <div className="absolute inset-0 bg-black/5 translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-1000"></div>
               <div className="relative z-10 flex items-center justify-center gap-4">

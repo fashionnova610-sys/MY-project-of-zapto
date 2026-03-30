@@ -20,12 +20,18 @@ const Crypto3DScroller = () => {
         if (!trackRef.current) return;
 
         // Infinite loop animation using 1/3 technique for triple redundancy
-        const trackWidth = trackRef.current.scrollWidth;
+        const totalWidth = trackRef.current.scrollWidth;
+        const singleSetWidth = totalWidth / 3;
+
         gsap.to(trackRef.current, {
-            x: -trackWidth / 3,
-            duration: 25,
+            x: -singleSetWidth,
+            duration: 20,
             repeat: -1,
             ease: "none",
+            onRepeat: () => {
+                // Reset to start position instantly for seamless loop
+                gsap.set(trackRef.current, { x: 0 });
+            }
         });
 
         // Scroll-triggered skew/tilt

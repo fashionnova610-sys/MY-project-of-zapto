@@ -3,7 +3,7 @@ import { motion, useMotionValue, useTransform, useSpring } from "framer-motion";
 import { Bot, ChevronRight } from "lucide-react";
 import SplineBackground from "./SplineBackground";
 
-const MainTitle = () => {
+const MainTitle = ({ onTradeClick }) => {
     // Mouse Tracking Logic
     const mouseX = useMotionValue(0);
     const mouseY = useMotionValue(0);
@@ -77,7 +77,7 @@ const MainTitle = () => {
                         Cameroon's <span className="text-primary italic">#1</span> Institutional 
                         <div className="text-4xl md:text-6xl mt-2 mb-4 tracking-tighter">Crypto to XAF Exchange</div>
                         <div className="text-[10px] md:text-xs text-white/40 tracking-[0.5em] mt-4 font-bold flex items-center justify-center gap-2">
-                             DOUALA • YAOUNDÉ • BAFOUSSAM • GAROUA
+                             DOUALA • YAOUNDÉ • BAMENDA • SOUTHWEST
                         </div>
                     </h2>
                     
@@ -89,23 +89,26 @@ const MainTitle = () => {
                     <div className="flex flex-col md:flex-row items-center justify-center gap-6 pt-8">
                         <button 
                             onClick={() => window.scrollTo({ top: document.getElementById('rates').offsetTop - 100, behavior: 'smooth' })}
-                            className="relative group px-14 py-6 bg-primary text-bg-deep font-black text-xs md:text-sm uppercase tracking-[0.3em] rounded-2xl overflow-hidden shadow-[0_0_50px_rgba(0,255,136,0.3)] transition-all active:scale-95 animate-pulse-button"
+                            className="relative group px-14 py-6 bg-[#00ff88] text-black font-black text-xs md:text-sm uppercase tracking-[0.3em] rounded-2xl overflow-hidden shadow-[0_0_30px_rgba(0,255,136,0.6)] hover:shadow-[0_0_50px_rgba(0,255,136,0.8)] transition-all active:scale-95 animate-pulse-whatsapp"
                         >
                             <span className="relative z-10 flex items-center gap-3">
-                                Instant USDT to XAF
+                                Check Rates
                                 <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-chevron-right group-hover:translate-x-1 transition-transform" aria-hidden="true">
                                     <path d="m9 18 6-6-6-6"></path>
                                 </svg>
                             </span>
-                            <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/40 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-1000"></div>
+                            <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-1000"></div>
                         </button>
                         
-                        <a 
-                            href="#how-it-works" 
-                            className="px-14 py-6 glass border-white/10 text-white font-black text-xs md:text-sm uppercase tracking-[0.3em] rounded-2xl hover:bg-white/5 transition-all text-center"
+                        <button 
+                            onClick={() => onTradeClick("Hi Zaptopay! 🇨🇲 I want to initiate a professional trade. Please send your current USDT to XAF institutional rates ASAP. 🚀")}
+                            className="px-14 py-6 glass border-white/10 text-white font-black text-xs md:text-sm uppercase tracking-[0.3em] rounded-2xl hover:bg-white/5 transition-all text-center flex items-center justify-center gap-3 group"
                         >
-                            Review Payout Process
-                        </a>
+                            <span>Direct WhatsApp Trade</span>
+                            <div className="w-5 h-5 rounded-full bg-primary/20 flex items-center justify-center group-hover:bg-primary group-hover:text-black transition-all">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-rocket"><path d="M4.5 16.5c-1.5 1.26-2 5-2 5s3.74-.5 5-2c.71-.84.7-2.13-.09-2.91a2.18 2.18 0 0 0-2.91-.09z"></path><path d="m12 15-3-3a22 22 0 0 1 2-3.95A12.88 12.88 0 0 1 22 2c0 2.72-.78 7.5-6 11a22.35 22.35 0 0 1-4 2z"></path><path d="M9 12H4s.55-3.03 2-5c1.62-2.2 5-3 5-3"></path><path d="M12 15v5s3.03-.55 5-2c2.2-1.62 3-5 3-5"></path></svg>
+                            </div>
+                        </button>
                     </div>
                 </div>
 

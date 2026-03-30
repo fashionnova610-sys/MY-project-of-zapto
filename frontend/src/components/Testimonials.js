@@ -4,6 +4,7 @@ import { Quote, Star, Plus, MessageSquare, X, Check } from "lucide-react";
 import * as Dialog from "@radix-ui/react-dialog";
 import { toast } from "sonner";
 import { initialTestimonials } from "../utils/testimonialData";
+import { API_BASE_URL } from "../utils/config";
 
 const TestimonialCard = ({ t }) => (
   <div className="glass p-6 border-white/5 hover:border-primary/30 transition-all duration-300 flex flex-col w-[350px] shrink-0 mx-3 group relative overflow-hidden">
@@ -62,7 +63,7 @@ const Testimonials = () => {
   React.useEffect(() => {
     const fetchTestimonials = async () => {
       try {
-        const response = await fetch('http://localhost:8000/api/testimonials');
+        const response = await fetch(`${API_BASE_URL}/testimonials`);
         const data = await response.json();
         if (Array.isArray(data) && data.length > 0) {
           // Merge with initial ones but put new ones first
@@ -83,7 +84,7 @@ const Testimonials = () => {
     e.preventDefault();
     setIsSubmitting(true);
     try {
-      const response = await fetch('http://localhost:8000/api/testimonials', {
+      const response = await fetch(`${API_BASE_URL}/testimonials`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(newReview)
@@ -130,9 +131,8 @@ const Testimonials = () => {
         <Dialog.Root open={isDialogOpen} onOpenChange={setIsDialogOpen}>
           <Dialog.Trigger asChild>
             <motion.button
-              whileHover={{ scale: 1.05 }}
               whileTap={{ scale: 0.95 }}
-              className="px-8 py-4 bg-white text-black font-black uppercase tracking-widest text-xs flex items-center gap-2 hover:bg-primary transition-colors shadow-[0_0_30px_rgba(255,255,255,0.1)]"
+              className="px-8 py-4 bg-[#00ff88] text-black font-black uppercase tracking-widest text-xs flex items-center gap-2 hover:bg-white transition-all duration-500 shadow-[0_0_30px_rgba(0,255,136,0.6)] animate-pulse-whatsapp"
               data-aos="fade-left"
             >
               <Plus size={16} />
@@ -193,7 +193,7 @@ const Testimonials = () => {
                 <button 
                   type="submit"
                   disabled={isSubmitting}
-                  className="w-full py-4 bg-primary text-black font-black uppercase tracking-[0.12em] text-xs hover:bg-white transition-all shadow-lg disabled:opacity-40"
+                  className="w-full py-4 bg-[#00ff88] text-black font-black uppercase tracking-[0.12em] text-xs hover:bg-white transition-all shadow-[0_0_30px_rgba(0,255,136,0.6)] disabled:opacity-40 animate-pulse-whatsapp"
                 >
                   {isSubmitting ? "Posting..." : "Confirm Post"}
                 </button>

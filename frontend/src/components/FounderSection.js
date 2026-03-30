@@ -49,8 +49,9 @@ const FounderSection = () => {
                                 <div className="relative h-full w-full rounded-3xl overflow-hidden border border-white/10 shadow-3xl bg-black/40">
                                     <img 
                                         src="/assets/founder.jpg" 
-                                        alt="Zaptopay Founder" 
-                                        className="w-full h-full object-cover grayscale group-hover:grayscale-0 transition-all duration-1000 scale-105 group-hover:scale-100"
+                                        alt="Doumene M. Rosvel - Zaptopay Founder & CEO" 
+                                        className="w-full h-full object-cover object-top grayscale group-hover:grayscale-0 transition-all duration-1000 scale-105 group-hover:scale-100"
+                                        style={{ objectPosition: 'center 15%' }}
                                     />
                                     {/* Overlay Gradient */}
                                     <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent opacity-60"></div>
@@ -59,7 +60,7 @@ const FounderSection = () => {
                                 {/* Floating Tag */}
                                 <div className="absolute -bottom-6 -left-6 md:-left-12 glass p-6 border-primary/50 text-left backdrop-blur-3xl animate-float min-w-[240px]">
                                     <div className="text-[10px] font-bold text-primary mb-1 tracking-[0.4em] uppercase">Founder & CEO</div>
-                                    <div className="text-2xl font-black tracking-tighter">ROSVEL MELONG</div>
+                                    <div className="text-2xl font-black tracking-tighter">Doumene M. Rosvel</div>
                                 </div>
                             </div>
                         </div>

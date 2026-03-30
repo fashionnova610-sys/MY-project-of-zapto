@@ -12,7 +12,8 @@ import MainTitle from "./components/MainTitle";
 import Crypto3DScroller from "./components/Crypto3DScroller";
 import CryptoTracker from "./components/CryptoTracker";
 import EnhancedRateCalculator from "./components/EnhancedRateCalculator";
-import WhatsAppBotWidget from "./components/WhatsAppBotWidget";
+import WhatsAppModal from "./components/WhatsAppModal";
+import FloatingWhatsApp from "./components/FloatingWhatsApp";
 import TransactionHistory from "./components/TransactionHistory";
 import FounderSection from "./components/FounderSection";
 import FAQAccordion from "./components/FAQAccordion";
@@ -24,6 +25,7 @@ import ContactSection from "./components/ContactSection";
 import Footer from "./components/Footer";
 import AdminLogin from "./pages/AdminLogin";
 import AdminDashboard from "./pages/AdminDashboard";
+import ProtectedRoute from "./components/ProtectedRoute";
 
 // Features
 const HowItWorks = () => (
@@ -40,7 +42,7 @@ const HowItWorks = () => (
 
                 { [
                     { step: "01", title: "Calculate", desc: "Use our live calculator to see exactly how much XAF you will receive." },
-                    { step: "02", title: "Chat with Bot", desc: "Interact with ZaptoBot on the site and get connected to verified agents." },
+                    { step: "02", title: "Trade Preview", desc: "Review your trade payload and connect with a verified agent on WhatsApp." },
                     { step: "03", title: "Receive Funds", desc: "Get paid instantly via MTN or Orange Mobile Money with receipt." }
                 ].map((item, i) => (
                     <div key={i} className="glass p-10 relative overflow-hidden group hover:border-black/20 dark:hover:border-white/20 transition-all duration-300" data-aos="fade-up" data-aos-delay={i * 200}>
@@ -81,6 +83,18 @@ const WhyChooseUs = () => (
                                 </div>
                             </div>
                         ))}
+                        <button 
+                            onClick={() => window.scrollTo({ top: document.getElementById('market-pulse').offsetTop - 100, behavior: 'smooth' })}
+                            className="relative group px-14 py-6 bg-[#00ff88] text-black font-black text-xs md:text-sm uppercase tracking-[0.3em] rounded-2xl overflow-hidden shadow-[0_0_30px_rgba(0,255,136,0.6)] hover:shadow-[0_0_50px_rgba(0,255,136,0.8)] transition-all active:scale-95 animate-pulse-whatsapp"
+                        >
+                            <span className="relative z-10 flex items-center gap-3">
+                                Check Rates
+                                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-chevron-right group-hover:translate-x-1 transition-transform" aria-hidden="true">
+                                    <path d="m9 18 6-6-6-6"></path>
+                                </svg>
+                            </span>
+                            <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-1000"></div>
+                        </button>
                     </div>
                 </div>
                 <div className="relative" data-aos="zoom-in">
@@ -114,6 +128,14 @@ const WhyChooseUs = () => (
 
 
 function AppContent() {
+    const [isWhatsAppModalOpen, setIsWhatsAppModalOpen] = React.useState(false);
+    const [whatsAppMessage, setWhatsAppMessage] = React.useState("");
+
+    const openWhatsAppModal = (message = "") => {
+        setWhatsAppMessage(message || `👋 Hello Zaptopay! I'm interested in trading crypto for XAF. Please guide me through the process.`);
+        setIsWhatsAppModalOpen(true);
+    };
+
     useEffect(() => {
         AOS.init({
             duration: 1000,
@@ -229,7 +251,7 @@ function AppContent() {
                 })}</script>
             </Helmet>
 
-            <Navigation />
+            <Navigation onTradeClick={() => openWhatsAppModal()} />
             <Routes>
                 <Route path="/" element={
                     <main>
@@ -237,22 +259,25 @@ function AppContent() {
                         <div className="bg-blob" style={{ top: '10%', left: '-10%' }}></div>
                         <div className="bg-blob" style={{ top: '60%', right: '-10%', background: 'var(--secondary-glow)', opacity: '0.2' }}></div>
                         
-                        <MainTitle />
+                        <MainTitle onTradeClick={() => openWhatsAppModal()} />
                         <Crypto3DScroller />
                         <PartnersScroller />
                         <HowItWorks />
                         <WhyChooseUs />
                         
-                        <section id="rates" className="container relative z-10 py-24 mb-12">
+                        {/* Market Pulse Section */}
+                        <section id="market-pulse" className="container relative z-10 py-16">
                             <div className="text-center mb-16">
                                 <h2 className="text-4xl md:text-5xl font-black mb-4 uppercase tracking-tighter" data-aos="fade-up">Live Marketplace</h2>
                                 <p className="text-text-muted text-lg" data-aos="fade-up" data-aos-delay="100">Synchronized with global Binance market rates.</p>
                             </div>
-                            <div className="grid grid-cols-1 lg:grid-cols-2 gap-12" data-aos="zoom-in">
+                            <div className="max-w-6xl mx-auto" data-aos="zoom-in">
                                 <CryptoTracker />
-                                <EnhancedRateCalculator />
                             </div>
                         </section>
+
+                        {/* Enhanced Calculator Section */}
+                        <EnhancedRateCalculator onWhatsAppClick={openWhatsAppModal} />
 
                         <TransactionHistory />
                         <Testimonials />
@@ -261,11 +286,23 @@ function AppContent() {
                         <FAQAccordion />
                         <ContactSection />
                         <Footer />
-                        <WhatsAppBotWidget />
+                        <FloatingWhatsApp onClick={() => openWhatsAppModal()} />
+                        <WhatsAppModal 
+                            isOpen={isWhatsAppModalOpen}
+                            onClose={() => setIsWhatsAppModalOpen(false)}
+                            initialMessage={whatsAppMessage}
+                        />
                     </main>
                 } />
                 <Route path="/admin/login" element={<AdminLogin />} />
-                <Route path="/admin/dashboard" element={<AdminDashboard />} />
+                <Route 
+                    path="/admin/dashboard" 
+                    element={
+                        <ProtectedRoute>
+                            <AdminDashboard />
+                        </ProtectedRoute>
+                    } 
+                />
             </Routes>
         </div>
     );

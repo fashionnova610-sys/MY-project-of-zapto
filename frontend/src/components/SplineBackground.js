@@ -3,7 +3,7 @@ import Spline from '@splinetool/react-spline';
 
 const SplineBackground = () => {
     return (
-        <div className="absolute inset-0 w-full h-full -z-10 overflow-hidden pointer-events-none opacity-60 md:opacity-80">
+        <div className="absolute inset-0 w-full h-full -z-10 overflow-hidden opacity-60 md:opacity-80 touch-none">
             <div className="absolute inset-0 bg-black -z-20"></div>
             <Suspense fallback={
                 <div className="absolute inset-0 bg-black flex items-center justify-center">

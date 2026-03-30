@@ -4,7 +4,7 @@ import { motion } from 'framer-motion';
 import axios from 'axios';
 import { CONFIG } from '../utils/config';
 
-const EnhancedRateCalculator = () => {
+const EnhancedRateCalculator = ({ onWhatsAppClick }) => {
     // 1. Assets Configuration
     const cryptos = [
         { name: 'Tether (USDT)', symbol: 'USDT', icon: '₮', color: 'text-primary' },
@@ -20,7 +20,8 @@ const EnhancedRateCalculator = () => {
     const [mode, setMode] = useState('sell'); // 'sell' or 'buy'
     const [loading, setLoading] = useState(false);
     const [result, setResult] = useState(null);
-    const [rates, setRates] = useState({ sell: 0, buy: 0 });
+    const [rates, setRates] = useState({ sell: 650, buy: 680 }); // Higher safe defaults
+    const [selectedPaymentMethod, setSelectedPaymentMethod] = useState('MTN');
     const [hasFetchedRates, setHasFetchedRates] = useState(false);
     const [cryptoPrices, setCryptoPrices] = useState({ USDT: 1, BTC: 95000, ETH: 3500, BNB: 600, SOL: 180 });
 
@@ -54,7 +55,7 @@ const EnhancedRateCalculator = () => {
                     headers: { 'Cache-Control': 'no-cache' }
                 });
                 if (res.data) {
-                    console.log(`[Rates] Sync Successful: USDT -> ${res.data.sell_rate}/${res.data.buy_rate}`);
+
                     setRates({
                         sell: res.data.sell_rate,
                         buy: res.data.buy_rate
@@ -83,9 +84,9 @@ const EnhancedRateCalculator = () => {
 
         setLoading(true);
         setTimeout(() => {
-            // Fix: Use the selectedCrypto directly as it is now 'USDT', 'BTC', etc.
             const cryptoPrice = cryptoPrices[selectedCrypto] || 1;
-            const xafRate = mode === 'sell' ? rates.sell : rates.buy;
+            // Use live rates if available, otherwise use initial state defaults (650/680)
+            const xafRate = mode === 'sell' ? (rates.sell || 650) : (rates.buy || 680);
             
             const totalXAF = num * cryptoPrice * xafRate;
             
@@ -94,7 +95,8 @@ const EnhancedRateCalculator = () => {
                 cryptoAmount: num,
                 symbol: selectedCrypto,
                 cryptoPrice,
-                xafRate
+                xafRate,
+                paymentMethod: selectedPaymentMethod
             });
             setLoading(false);
         }, 600);
@@ -104,14 +106,14 @@ const EnhancedRateCalculator = () => {
         <section id="calculator" className="py-24 relative overflow-hidden">
             <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 -z-10 w-full h-full bg-primary/5 blur-[150px] rounded-full"></div>
             
-            <div className="container max-w-5xl">
-                <div className="flex flex-col xl:flex-row gap-12 items-start xl:items-center">
+            <div className="container max-w-7xl px-4 md:px-12">
+                <div className="flex flex-col xl:flex-row gap-16 xl:gap-40 items-start xl:items-center justify-between">
                     {/* Left: Info */}
-                    <div data-aos="fade-right">
-                        <h2 className="text-4xl md:text-5xl font-black mb-6 uppercase tracking-tight">
+                    <div data-aos="fade-right" className="xl:flex-1 2xl:max-w-2xl">
+                        <h2 className="text-4xl md:text-5xl 2xl:text-6xl font-black mb-6 uppercase tracking-tight">
                             Smart <span className="text-primary italic">Rate</span> Calculator
                         </h2>
-                        <p className="text-text-muted text-lg mb-8 max-w-lg">
+                        <p className="text-text-muted text-lg mb-8 max-w-lg xl:max-w-xl 2xl:max-w-2xl">
                             Get real-time quotes combining global market prices with our elite local XAF rates. Instant, accurate, and ready for execution.
                         </p>
                         
@@ -128,20 +130,20 @@ const EnhancedRateCalculator = () => {
                     </div>
 
                     {/* Right: Calculator Card */}
-                    <div className="glass p-6 md:p-10 border-white/10 relative group w-full xl:max-w-xl min-w-0" data-aos="fade-left">
+                    <div className="glass p-6 md:p-10 border-white/10 relative group w-full xl:max-w-xl 2xl:max-w-2xl min-w-0" data-aos="fade-left">
                         <div className="absolute -top-4 -right-4 w-24 h-24 bg-primary/20 blur-3xl rounded-full opacity-0 group-hover:opacity-100 transition-opacity"></div>
                         
                         {/* Sell/Buy Toggle */}
                         <div className="flex p-1 bg-white/5 rounded-none border border-white/10 mb-8">
                             <button
                                 onClick={() => { setMode('sell'); setResult(null); }}
-                                className={`flex-1 py-4 text-[10px] font-black uppercase tracking-[0.12em] transition-all ${mode === 'sell' ? 'bg-primary text-black' : 'text-white/70 hover:text-white'}`}
+                                className={`flex-1 py-4 text-[10px] font-black uppercase tracking-[0.12em] transition-all ${mode === 'sell' ? 'bg-white text-black shadow-[0_0_20px_rgba(255,255,255,0.2)]' : 'bg-white/10 text-white/50 hover:bg-white/20 hover:text-white'}`}
                             >
                                 I am Selling
                             </button>
                             <button
                                 onClick={() => { setMode('buy'); setResult(null); }}
-                                className={`flex-1 py-4 text-[10px] font-black uppercase tracking-[0.12em] transition-all ${mode === 'buy' ? 'bg-primary text-black' : 'text-white/70 hover:text-white'}`}
+                                className={`flex-1 py-4 text-[10px] font-black uppercase tracking-[0.12em] transition-all ${mode === 'buy' ? 'bg-white text-black shadow-[0_0_20px_rgba(255,255,255,0.2)]' : 'bg-white/10 text-white/50 hover:bg-white/20 hover:text-white'}`}
                             >
                                 I am Buying
                             </button>
@@ -159,6 +161,34 @@ const EnhancedRateCalculator = () => {
                                     >
                                         <span className={`text-xl font-black shrink-0 ${crypto.color}`}>{crypto.icon}</span>
                                         <span className="text-[8px] font-bold tracking-widest uppercase text-white/90">{crypto.symbol}</span>
+                                    </button>
+                                ))}
+                            </div>
+                        </div>
+
+                        {/* Payment Method Selector */}
+                        <div className="mb-8">
+                            <label className="text-[10px] font-black text-text-muted uppercase tracking-[0.2em] mb-4 block underline decoration-primary/30 underline-offset-4">Receiving Method (CEMAC)</label>
+                            <div className="grid grid-cols-3 gap-3">
+                                {[
+                                    { id: 'MTN', name: 'MTN MoMo', color: 'text-yellow-400', icon: '🟡', logo: '⚡' },
+                                    { id: 'Orange', name: 'Orange Money', color: 'text-orange-500', icon: '🟠', logo: '🍊' },
+                                    { id: 'Wave', name: 'Wave Money', color: 'text-blue-400', icon: '🌊', logo: '💠' }
+                                ].map((method) => (
+                                    <button
+                                        key={method.id}
+                                        onClick={() => { setSelectedPaymentMethod(method.id); setResult(null); }}
+                                        className={`group relative overflow-hidden py-4 px-2 glass border-white/5 flex flex-col items-center justify-center gap-2 transition-all duration-500 hover:border-primary/40 ${selectedPaymentMethod === method.id ? 'bg-primary/10 border-primary shadow-[0_0_30px_rgba(0,255,136,0.15)] ring-1 ring-primary/20 scale-[1.02]' : 'opacity-40 grayscale hover:grayscale-0 hover:opacity-100 hover:scale-[1.01]'}`}
+                                    >
+                                        <div className={`w-8 h-8 rounded-full flex items-center justify-center bg-white/5 border border-white/5 group-hover:border-primary/30 transition-all duration-500 ${selectedPaymentMethod === method.id ? 'border-primary/30 scale-110' : ''}`}>
+                                            <span className="text-sm">{method.logo}</span>
+                                        </div>
+                                        <span className={`text-[8px] font-black uppercase tracking-[0.2em] transition-all ${method.color} ${selectedPaymentMethod === method.id ? 'opacity-100' : 'opacity-70'}`}>{method.name}</span>
+                                        {selectedPaymentMethod === method.id && (
+                                            <div className="absolute top-0 right-0 p-1">
+                                                <div className="w-1 h-1 bg-primary rounded-full animate-pulse"></div>
+                                            </div>
+                                        )}
                                     </button>
                                 ))}
                             </div>
@@ -182,7 +212,7 @@ const EnhancedRateCalculator = () => {
                         <button
                             onClick={calculate}
                             disabled={!amount || loading}
-                            className="w-full py-6 bg-primary text-black font-black uppercase tracking-[0.12em] hover:bg-white transition-all duration-500 shadow-[0_15px_40px_rgba(0,255,136,0.3)] disabled:opacity-40 flex items-center justify-center gap-3 mb-10 overflow-hidden relative group"
+                            className="w-full py-6 bg-[#00ff88] text-black font-black uppercase tracking-[0.12em] hover:bg-white transition-all duration-500 shadow-[0_15px_40px_rgba(0,255,136,0.3)] disabled:opacity-40 flex items-center justify-center gap-3 mb-10 overflow-hidden relative group"
                         >
                             <div className="absolute inset-0 bg-white/20 translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-1000"></div>
                             <div className="relative z-10 flex items-center justify-center gap-3">
@@ -200,7 +230,7 @@ const EnhancedRateCalculator = () => {
                         </button>
 
                         {/* Result Area */}
-                        {result && hasFetchedRates && (
+                        {result && (
                             <motion.div 
                                 initial={{ opacity: 0, scale: 0.95 }}
                                 animate={{ opacity: 1, scale: 1 }}
@@ -229,21 +259,22 @@ const EnhancedRateCalculator = () => {
                                     </div>
                                 </div>
 
-                                <a 
-                                    href={`https://wa.me/${CONFIG.SUPPORT_WHATSAPP}?text=${encodeURIComponent(
-                                        `Hey Zaptopay! ⚡ I just calculated a trade of ${result.cryptoAmount} ${result.symbol} for approx ${Math.round(result.xafValue).toLocaleString()} XAF. I want to proceed NOW! 🚀`
-                                    )}`}
-                                    target="_blank"
-                                    rel="noopener noreferrer"
-                                    className="block"
+                                <motion.button
+                                    whileTap={{ scale: 0.98 }}
+                                    onClick={() => onWhatsAppClick(`Hey Zaptopay VIP! ⚡ I just calculated a trade:
+- Amount: ${result.cryptoAmount} ${result.symbol}
+- Service: ${mode === 'sell' ? 'Selling to Zaptopay' : 'Buying from Zaptopay'}
+- Payout Method: ${result.paymentMethod}
+- Estimated XAF: ${Math.round(result.xafValue).toLocaleString()}
+
+I want to finish this now! 🚀`)}
+                                    className="w-full py-6 bg-[#00ff88] text-black font-black text-sm uppercase tracking-[0.18em] flex items-center justify-center gap-4 hover:bg-white transition-all duration-700 shadow-[0_0_30px_rgba(0,255,136,0.6)] relative overflow-hidden group animate-pulse-whatsapp"
                                 >
-                                    <button className="w-full py-6 bg-primary text-black font-black uppercase tracking-[0.15em] flex items-center justify-center gap-4 hover:bg-white transition-all shadow-[0_20px_50px_rgba(0,255,136,0.4)] animate-pulse-whatsapp">
-                                        <div className="w-8 h-8 rounded-full bg-black/10 flex items-center justify-center">
-                                            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-message-circle"><path d="M7.9 20A9 9 0 1 0 4 16.1L2 22Z"></path></svg>
-                                        </div>
-                                        Message Agent on WhatsApp ASAP
-                                    </button>
-                                </a>
+                                    <div className="w-8 h-8 rounded-full bg-black/10 flex items-center justify-center">
+                                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-message-circle"><path d="M7.9 20A9 9 0 1 0 4 16.1L2 22Z"></path></svg>
+                                    </div>
+                                    Message Agent on WhatsApp ASAP
+                                </motion.button>
                                 <p className="text-center text-[10px] font-black text-primary uppercase tracking-[0.18em] animate-pulse">
                                     Direct VIP Support Available 24/7
                                 </p>

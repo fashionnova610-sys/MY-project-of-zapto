@@ -1,8 +1,8 @@
-import React, { useState } from 'react';
-import { X, Send } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { X, Send, RefreshCw } from 'lucide-react';
 import './WhatsAppModal.css';
 
-const WhatsAppModal = ({ isOpen, onClose }) => {
+const WhatsAppModal = ({ isOpen, onClose, initialMessage }) => {
   const defaultMessage = `👋 Welcome to Zaptopay!
 
 Your trusted partner for secure Crypto-to-XAF exchange. 🔒
@@ -19,7 +19,13 @@ For example: "I want to sell $100 USDT" or "I want to buy $50 of BTC."
 
 How can we help you today? 👇`;
 
-  const [message, setMessage] = useState(defaultMessage);
+  const [message, setMessage] = useState(initialMessage || defaultMessage);
+
+  useEffect(() => {
+    if (isOpen && initialMessage) {
+      setMessage(initialMessage);
+    }
+  }, [isOpen, initialMessage]);
 
   const handleSend = () => {
     const encodedMessage = encodeURIComponent(message);
@@ -46,23 +52,40 @@ How can we help you today? 👇`;
         </div>
 
         <div className="modal-body">
+          <div className="agent-badge-container">
+            <div className="agent-avatar">
+              <img src="/assets/logos/logo-navbar.png" alt="Zaptopay Agent" />
+              <div className="online-indicator"></div>
+            </div>
+            <div className="agent-info">
+              <div className="agent-name">Zaptopay Trade Desk <span className="verified-tag">✓ Verified Agent</span></div>
+              <div className="agent-stats">Institutional Liquidity Provider • Cameroon</div>
+            </div>
+          </div>
+
           <div className="message-preview">
-            <div className="preview-label">Your message to Zaptopay:</div>
-            <textarea
-              className="message-textarea"
-              value={message}
-              onChange={(e) => setMessage(e.target.value)}
-              rows={15}
-            />
+            <div className="preview-label">Official Trade Payload</div>
+            <div className="textarea-wrapper">
+              <textarea
+                className="message-textarea"
+                value={message}
+                onChange={(e) => setMessage(e.target.value)}
+                rows={12}
+                spellCheck="false"
+              />
+              <div className="textarea-glow"></div>
+            </div>
+            <p className="preview-hint">You can edit the message above before sending to our trade desk.</p>
           </div>
 
           <div className="modal-footer">
-            <button className="edit-btn" onClick={() => setMessage(defaultMessage)}>
-              Reset Message
+            <button className="edit-btn" onClick={() => setMessage(initialMessage || defaultMessage)}>
+              <RefreshCw size={14} />
+              Reset
             </button>
             <button className="send-btn" onClick={handleSend}>
-              <Send size={20} />
-              Open WhatsApp
+              <Send size={18} />
+              Confirm & Start Trade
             </button>
           </div>
         </div>

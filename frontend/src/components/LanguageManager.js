@@ -11,7 +11,7 @@ const LanguageManager = () => {
                 const country = data.country_code; // CM, NG, US, etc.
                 const languages = data.languages; // e.g. "en-CM,fr-CM"
                 
-                console.log(`[Geo-IP] Detected Country: ${country}`);
+
 
                 // Simple Logic: If Cameroon (CM) and it's not already translated, set to French
                 if (country === 'CM' && !document.cookie.includes('googtrans')) {
