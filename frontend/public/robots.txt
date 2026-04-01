@@ -1,5 +1,6 @@
 User-agent: *
 Allow: /
 Disallow: /admin
+Disallow: /api
 
-Sitemap: https://zaptopay.com/sitemap.xml
+Sitemap: https://zaptopay.online/sitemap.xml

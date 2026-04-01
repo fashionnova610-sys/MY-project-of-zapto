@@ -58,72 +58,94 @@ const HowItWorks = () => (
     </section>
 );
 
-const WhyChooseUs = () => (
-    <section id="why-us" className="relative overflow-hidden py-24 bg-card/10 border-y border-glass-border">
-        <div className="bg-grid"></div>
-        <div className="container relative z-10">
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-16 items-center">
-                <div>
-                    <h2 className="text-4xl md:text-6xl font-black mb-8 leading-tight" data-aos="fade-right">
-                        Trusted by <span className="text-primary italic">100k+</span> Satisfied Users
-                    </h2>
-                    <div className="space-y-6">
-                        {[
-                            { icon: "⚡", title: "Instant Payouts", desc: "Mobile Money transfers reach your wallet in seconds, not hours." },
-                            { icon: "🛡️", title: "Verified Security", desc: "Regulated exchange processes and end-to-end encryption." },
-                            { icon: "💎", title: "Competitive Rates", desc: "The highest market rates for USDT and Bitcoin in Cameroon." }
-                        ].map((item, i) => (
-                            <div key={i} className="flex gap-6 items-start" data-aos="fade-right" data-aos-delay={i * 150}>
-                                <div className="w-14 h-14 glass flex items-center justify-center text-3xl shrink-0 border-primary/30 shadow-lg">
-                                    {item.icon}
-                                </div>
-                                <div>
-                                    <h4 className="text-xl font-bold mb-1">{item.title}</h4>
-                                    <p className="text-text-muted">{item.desc}</p>
-                                </div>
-                            </div>
-                        ))}
-                        <button 
-                            onClick={() => window.scrollTo({ top: document.getElementById('market-pulse').offsetTop - 100, behavior: 'smooth' })}
-                            className="relative group px-14 py-6 bg-[#00ff88] text-black font-black text-xs md:text-sm uppercase tracking-[0.3em] rounded-2xl overflow-hidden shadow-[0_0_30px_rgba(0,255,136,0.6)] hover:shadow-[0_0_50px_rgba(0,255,136,0.8)] transition-all active:scale-95 animate-pulse-whatsapp"
-                        >
-                            <span className="relative z-10 flex items-center gap-3">
-                                Check Rates
-                                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-chevron-right group-hover:translate-x-1 transition-transform" aria-hidden="true">
-                                    <path d="m9 18 6-6-6-6"></path>
-                                </svg>
-                            </span>
-                            <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-1000"></div>
-                        </button>
-                    </div>
-                </div>
-                <div className="relative" data-aos="zoom-in">
-                    <div className="glass p-8 rotate-3 hover:rotate-0 transition-transform duration-500 relative z-10">
-                        <div className="flex justify-between items-center mb-6">
-                            <span className="bg-primary/20 text-primary px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider">Public Ledger Live</span>
-                            <span className="text-text-muted text-xs animate-pulse">Scanning blockchain...</span>
-                        </div>
-                        <div className="space-y-4">
-                            {[1, 2, 3, 4].map(idx => (
-                                <div key={idx} className="flex justify-between items-center p-3 border-b border-white/5">
-                                    <div className="flex gap-3 items-center">
-                                        <div className="w-8 h-8 rounded-full bg-gradient-to-br from-primary to-secondary/80"></div>
-                                        <div>
-                                            <div className="text-sm font-bold">TX #ZAPTO...{idx}X7</div>
-                                            <div className="text-[10px] text-text-muted">SUCCESSFUL</div>
-                                        </div>
+const WhyChooseUs = () => {
+    const [trades, setTrades] = React.useState([
+        { id: "X7A", amount: 500 },
+        { id: "F9B", amount: 1250 },
+        { id: "4C2", amount: 300 },
+        { id: "9P1", amount: 840 }
+    ]);
+
+    React.useEffect(() => {
+        const interval = setInterval(() => {
+            setTrades(prevTrades => {
+                const newTrade = {
+                    id: Math.random().toString(36).substring(2, 5).toUpperCase(),
+                    amount: Math.floor(Math.random() * (3000 - 50 + 1) + 50)
+                };
+                return [newTrade, ...prevTrades.slice(0, 3)];
+            });
+        }, 4500);
+        return () => clearInterval(interval);
+    }, []);
+
+    return (
+        <section id="why-us" className="relative overflow-hidden py-24 bg-card/10 border-y border-glass-border optimize-gpu">
+            <div className="bg-grid"></div>
+            <div className="container relative z-10">
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-16 items-center">
+                    <div>
+                        <h2 className="text-4xl md:text-6xl font-black mb-8 leading-tight" data-aos="fade-right">
+                            Trusted by <span className="text-primary italic">100k+</span> Satisfied Users
+                        </h2>
+                        <div className="space-y-6">
+                            {[
+                                { icon: "⚡", title: "Instant Payouts", desc: "Mobile Money transfers reach your wallet in seconds, not hours." },
+                                { icon: "🛡️", title: "Verified Security", desc: "Regulated exchange processes and end-to-end encryption." },
+                                { icon: "💎", title: "Competitive Rates", desc: "The highest market rates for USDT and Bitcoin in Cameroon." }
+                            ].map((item, i) => (
+                                <div key={i} className="flex gap-6 items-start" data-aos="fade-right" data-aos-delay={i * 150}>
+                                    <div className="w-14 h-14 glass flex items-center justify-center text-3xl shrink-0 border-primary/30 shadow-lg">
+                                        {item.icon}
                                     </div>
-                                    <div className="text-primary font-mono text-sm">+$500.00</div>
+                                    <div>
+                                        <h4 className="text-xl font-bold mb-1">{item.title}</h4>
+                                        <p className="text-text-muted">{item.desc}</p>
+                                    </div>
                                 </div>
                             ))}
+                            <button 
+                                onClick={() => window.scrollTo({ top: document.getElementById('market-pulse').offsetTop - 100, behavior: 'smooth' })}
+                                className="relative group px-14 py-6 bg-[#00ff88] text-black font-black text-xs md:text-sm uppercase tracking-[0.3em] rounded-2xl overflow-hidden shadow-[0_0_30px_rgba(0,255,136,0.6)] hover:shadow-[0_0_50px_rgba(0,255,136,0.8)] transition-all active:scale-95 animate-pulse-whatsapp"
+                            >
+                                <span className="relative z-10 flex items-center gap-3">
+                                    Check Rates
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-chevron-right group-hover:translate-x-1 transition-transform" aria-hidden="true">
+                                        <path d="m9 18 6-6-6-6"></path>
+                                    </svg>
+                                </span>
+                                <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-1000"></div>
+                            </button>
                         </div>
                     </div>
-                    <div className="absolute -top-10 -right-10 w-40 h-40 bg-primary/20 blur-3xl animate-pulse-glow"></div>
+                    <div className="relative" data-aos="zoom-in">
+                        <div className="glass p-8 rotate-3 hover:rotate-0 transition-transform duration-500 relative z-10">
+                            <div className="flex justify-between items-center mb-6">
+                                <span className="bg-primary/20 text-primary px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider">Public Ledger Live</span>
+                                <span className="text-text-muted text-xs animate-pulse">Scanning blockchain...</span>
+                            </div>
+                            <div className="space-y-4">
+                                {trades.map((trade, idx) => (
+                                    <div key={trade.id + idx} className="flex justify-between items-center p-3 border-b border-white/5">
+                                        <div className="flex gap-3 items-center">
+                                            <div className="w-8 h-8 rounded-full bg-gradient-to-br from-primary to-secondary/80"></div>
+                                            <div>
+                                                <div className="text-sm font-bold">TX #ZAPTO...{trade.id}</div>
+                                                <div className="text-[10px] text-text-muted">SUCCESSFUL</div>
+                                            </div>
+                                        </div>
+                                        <div className="text-primary font-mono text-sm">+${trade.amount.toFixed(2)}</div>
+                                    </div>
+                                ))}
+                            </div>
+                        </div>
+                        <div className="absolute -top-10 -right-10 w-40 h-40 bg-primary/20 blur-3xl animate-pulse-glow"></div>
+                    </div>
                 </div>
             </div>
-        </div>
-    </section>
-);
+        </section>
+    );
+};
 
 
 
@@ -181,7 +203,7 @@ function AppContent() {
     };
 
     return (
-        <div className="App text-text-main selection:bg-white selection:text-black group">
+        <div className="App text-text-main selection:bg-white selection:text-black group overflow-x-hidden w-full flex flex-col min-h-screen optimize-gpu">
             <MouseGlow />
             <Helmet>
                 <title>Zaptopay | Secure Crypto-to-XAF Exchange Cameroon</title>
@@ -259,7 +281,9 @@ function AppContent() {
                         <div className="bg-blob" style={{ top: '10%', left: '-10%' }}></div>
                         <div className="bg-blob" style={{ top: '60%', right: '-10%', background: 'var(--secondary-glow)', opacity: '0.2' }}></div>
                         
-                        <MainTitle onTradeClick={() => openWhatsAppModal()} />
+                        <section className="scroll-gpu">
+                            <MainTitle onTradeClick={() => openWhatsAppModal()} />
+                        </section>
                         <Crypto3DScroller />
                         <PartnersScroller />
                         <HowItWorks />

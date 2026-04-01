@@ -66,6 +66,10 @@ class ContactMessageCreate(BaseModel):
     email: str
     message: str
 
+class SiteSettingUpdate(BaseModel):
+    key: str
+    value: str
+
 class BotChatRequest(BaseModel):
     message: str
     session_id: Optional[str] = None
@@ -433,6 +437,30 @@ async def get_admin_stats(session: dict = Depends(verify_admin_token)):
         "active_bot_responses": bot_res.count if bot_res.count else 0,
         "latest_rate": latest_rate
     }
+
+
+# ==================== SITE SETTINGS ====================
+
+@api_router.get("/settings")
+async def get_site_settings():
+    response = supabase.table("site_settings").select("*").execute()
+    # Return as a key-value dict for easy frontend consumption
+    settings = {row["key"]: row["value"] for row in response.data}
+    return settings
+
+@api_router.put("/admin/settings")
+async def update_site_settings(
+    updates: List[SiteSettingUpdate],
+    session: dict = Depends(verify_admin_token)
+):
+    for item in updates:
+        supabase.table("site_settings").upsert({
+            "key": item.key,
+            "value": item.value,
+            "updated_at": datetime.now(timezone.utc).isoformat()
+        }, on_conflict="key").execute()
+
+    return {"message": "Settings updated successfully"}
 
 
 # ==================== BASIC ROUTES ====================

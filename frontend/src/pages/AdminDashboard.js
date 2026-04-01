@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import { useNavigate } from 'react-router-dom';
-import { Shield, TrendingUp, History, Lock, LogOut, ChevronRight, RefreshCw, CheckCircle, Info, Mail } from 'lucide-react';
+import { Shield, TrendingUp, History, Lock, LogOut, ChevronRight, RefreshCw, CheckCircle, Info, Mail, Phone, MapPin, Save, Settings } from 'lucide-react';
 import { CONFIG } from '../utils/config';
 
 const AdminDashboard = () => {
@@ -10,6 +10,8 @@ const AdminDashboard = () => {
     const [contacts, setContacts] = useState([]);
     const [transactions, setTransactions] = useState([]);
     const [pendingTestimonials, setPendingTestimonials] = useState([]);
+    const [siteSettings, setSiteSettings] = useState({ contact_email: '', contact_whatsapp: '', contact_location: '' });
+    const [savingSettings, setSavingSettings] = useState(false);
     const [loading, setLoading] = useState(true);
     const [updating, setUpdating] = useState(false);
     const [isBackendOnline, setIsBackendOnline] = useState(true);
@@ -22,19 +24,21 @@ const AdminDashboard = () => {
         try {
             const config = { headers: { Authorization: `Bearer ${token}` } };
             
-            const [healthRes, ratesRes, contactRes, transRes, testimonialsRes] = await Promise.all([
+            const [healthRes, ratesRes, contactRes, transRes, testimonialsRes, settingsRes] = await Promise.all([
                 axios.get(`${CONFIG.API_BASE}/health`),
                 axios.get(`${CONFIG.API_BASE}/rates/current?currency=${selectedCurrency}`),
                 axios.get(`${CONFIG.API_BASE}/admin/contacts`, config),
                 axios.get(`${CONFIG.API_BASE}/transactions?limit=10`),
-                axios.get(`${CONFIG.API_BASE}/admin/testimonials/pending`, config)
+                axios.get(`${CONFIG.API_BASE}/admin/testimonials/pending`, config),
+                axios.get(`${CONFIG.API_BASE}/settings`)
             ]);
-            
+
             setIsBackendOnline(healthRes.data?.status === 'healthy');
             setRates(ratesRes.data);
             setContacts(contactRes.data);
             setTransactions(transRes.data);
             setPendingTestimonials(testimonialsRes.data);
+            setSiteSettings(prev => ({ ...prev, ...settingsRes.data }));
         } catch (err) {
             console.error("Dashboard error:", err);
             setIsBackendOnline(false);
@@ -104,6 +108,22 @@ const AdminDashboard = () => {
         navigate('/admin/login');
     };
 
+    const saveSiteSettings = async (e) => {
+        e.preventDefault();
+        setSavingSettings(true);
+        try {
+            const config = { headers: { Authorization: `Bearer ${token}` } };
+            const updates = Object.entries(siteSettings).map(([key, value]) => ({ key, value }));
+            await axios.put(`${CONFIG.API_BASE}/admin/settings`, updates, config);
+            alert("CONTACT INFO SYNCED TO PRODUCTION");
+            fetchDashboardData();
+        } catch (err) {
+            alert("Settings Update Failed: Check Admin Permissions");
+        } finally {
+            setSavingSettings(false);
+        }
+    };
+
     if (loading && rates.sell_rate === 0) return (
        <div className="min-h-screen bg-bg-deep flex items-center justify-center p-6">
            <div className="flex flex-col items-center gap-6">
@@ -139,9 +159,9 @@ const AdminDashboard = () => {
             </div>
 
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-12 relative z-10">
-                {/* Rate Management Panel */}
-                <div className="lg:col-span-1 space-y-8 h-full">
-                    <div className="glass p-10 border-primary/20 h-full">
+                {/* Left Column: Rates + Contact Info */}
+                <div className="lg:col-span-1 space-y-8">
+                    <div className="glass p-10 border-primary/20">
                         <div className="flex items-center justify-between mb-8">
                             <div className="flex items-center gap-3">
                                 <TrendingUp className="text-primary" size={20} />
@@ -207,6 +227,68 @@ const AdminDashboard = () => {
                                 </div>
                             </div>
                         </div>
+                    </div>
+
+                    {/* Contact Info Editor */}
+                    <div className="glass p-10 border-secondary/20">
+                        <div className="flex items-center gap-3 mb-8">
+                            <Settings className="text-secondary" size={20} />
+                            <h2 className="text-lg font-black uppercase tracking-widest">Contact Info</h2>
+                        </div>
+
+                        <form onSubmit={saveSiteSettings} className="space-y-6">
+                            <div>
+                                <label className="block text-[10px] font-black uppercase tracking-widest text-text-muted mb-3 opacity-70">
+                                    <Mail size={12} className="inline mr-2" />Email Address
+                                </label>
+                                <input
+                                    type="email"
+                                    value={siteSettings.contact_email || ''}
+                                    onChange={(e) => setSiteSettings({ ...siteSettings, contact_email: e.target.value })}
+                                    className="w-full bg-black/40 border border-white/10 rounded-xl px-5 py-4 text-sm font-bold text-white focus:outline-none focus:border-secondary transition-all"
+                                    placeholder="your@email.com"
+                                />
+                            </div>
+
+                            <div>
+                                <label className="block text-[10px] font-black uppercase tracking-widest text-text-muted mb-3 opacity-70">
+                                    <Phone size={12} className="inline mr-2" />WhatsApp Number
+                                </label>
+                                <input
+                                    type="text"
+                                    value={siteSettings.contact_whatsapp || ''}
+                                    onChange={(e) => setSiteSettings({ ...siteSettings, contact_whatsapp: e.target.value })}
+                                    className="w-full bg-black/40 border border-white/10 rounded-xl px-5 py-4 text-sm font-bold text-white focus:outline-none focus:border-secondary transition-all"
+                                    placeholder="237XXXXXXXXX"
+                                />
+                            </div>
+
+                            <div>
+                                <label className="block text-[10px] font-black uppercase tracking-widest text-text-muted mb-3 opacity-70">
+                                    <MapPin size={12} className="inline mr-2" />Location / Address
+                                </label>
+                                <input
+                                    type="text"
+                                    value={siteSettings.contact_location || ''}
+                                    onChange={(e) => setSiteSettings({ ...siteSettings, contact_location: e.target.value })}
+                                    className="w-full bg-black/40 border border-white/10 rounded-xl px-5 py-4 text-sm font-bold text-white focus:outline-none focus:border-secondary transition-all"
+                                    placeholder="City, Country"
+                                />
+                            </div>
+
+                            <button
+                                type="submit"
+                                disabled={savingSettings}
+                                className="w-full py-5 bg-secondary text-bg-deep font-black uppercase tracking-[0.2em] text-xs rounded-xl hover:scale-[1.02] active:scale-95 transition-all shadow-[0_0_40px_rgba(0,212,255,0.3)] flex items-center justify-center gap-3"
+                            >
+                                {savingSettings ? <RefreshCw className="animate-spin" size={18} /> : (
+                                    <>
+                                        <Save size={16} />
+                                        Save Contact Info
+                                    </>
+                                )}
+                            </button>
+                        </form>
                     </div>
                 </div>
 

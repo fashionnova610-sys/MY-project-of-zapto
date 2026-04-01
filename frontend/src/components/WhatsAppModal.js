@@ -1,8 +1,17 @@
 import React, { useState, useEffect } from 'react';
 import { X, Send, RefreshCw } from 'lucide-react';
+import axios from 'axios';
+import { CONFIG } from '../utils/config';
 import './WhatsAppModal.css';
 
 const WhatsAppModal = ({ isOpen, onClose, initialMessage }) => {
+  const [whatsappNumber, setWhatsappNumber] = useState('237676339620');
+
+  useEffect(() => {
+    axios.get(`${CONFIG.API_BASE}/settings`).then(res => {
+      if (res.data.contact_whatsapp) setWhatsappNumber(res.data.contact_whatsapp);
+    }).catch(() => {});
+  }, []);
   const defaultMessage = `👋 Welcome to Zaptopay!
 
 Your trusted partner for secure Crypto-to-XAF exchange. 🔒
@@ -29,7 +38,7 @@ How can we help you today? 👇`;
 
   const handleSend = () => {
     const encodedMessage = encodeURIComponent(message);
-    window.open(`https://wa.me/237676339620?text=${encodedMessage}`, '_blank');
+    window.open(`https://wa.me/${whatsappNumber}?text=${encodedMessage}`, '_blank');
     onClose();
   };
 

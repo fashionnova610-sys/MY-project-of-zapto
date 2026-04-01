@@ -1,7 +1,9 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import { Mail, Phone, MapPin, Send, MessageSquare } from "lucide-react";
 import { toast } from "sonner";
+import axios from "axios";
+import { CONFIG } from "../utils/config";
 
 const ContactSection = () => {
   const [formData, setFormData] = useState({
@@ -11,17 +13,34 @@ const ContactSection = () => {
     message: ""
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [contactInfo, setContactInfo] = useState({
+    contact_email: "rosvelmelong@gmail.com",
+    contact_whatsapp: "237676339620",
+    contact_location: "Bonapriso, Douala - Cameroon"
+  });
 
-  const handleSubmit = (e) => {
+  useEffect(() => {
+    axios.get(`${CONFIG.API_BASE}/settings`).then(res => {
+      setContactInfo(prev => ({ ...prev, ...res.data }));
+    }).catch(() => {});
+  }, []);
+
+  const handleSubmit = async (e) => {
     e.preventDefault();
     setIsSubmitting(true);
-    
-    // Simulate API call
-    setTimeout(() => {
+    try {
+      await axios.post(`${CONFIG.API_BASE}/contact`, {
+        name: formData.name,
+        email: formData.email,
+        message: `[${formData.subject}] ${formData.message}`
+      });
       toast.success("Message sent successfully! Our team will contact you shortly.");
       setFormData({ name: "", email: "", subject: "", message: "" });
+    } catch {
+      toast.error("Failed to send message. Please try again.");
+    } finally {
       setIsSubmitting(false);
-    }, 1500);
+    }
   };
 
   return (
@@ -50,7 +69,7 @@ const ContactSection = () => {
               </div>
               <div>
                 <h4 className="font-bold text-lg mb-1">Email Us</h4>
-                <p className="text-text-muted">rosvelmelong@gmail.com</p>
+                <p className="text-text-muted">{contactInfo.contact_email}</p>
               </div>
             </div>
 
@@ -70,13 +89,13 @@ const ContactSection = () => {
               </div>
               <div>
                 <h4 className="font-bold text-lg mb-1">Our Location</h4>
-                <p className="text-text-muted">Bonapriso, Douala - Cameroon</p>
+                <p className="text-text-muted">{contactInfo.contact_location}</p>
               </div>
             </div>
 
             <div className="pt-4">
               <a 
-                href="https://wa.me/237676339620" 
+                href={`https://wa.me/${contactInfo.contact_whatsapp}`} 
                 target="_blank" 
                 rel="noopener noreferrer"
                 className="inline-flex"

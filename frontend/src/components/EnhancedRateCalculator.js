@@ -18,9 +18,10 @@ const EnhancedRateCalculator = ({ onWhatsAppClick }) => {
     const [selectedCrypto, setSelectedCrypto] = useState('USDT');
     const [amount, setAmount] = useState('');
     const [mode, setMode] = useState('sell'); // 'sell' or 'buy'
+    const [inputMode, setInputMode] = useState('USD'); // 'USD' or 'XAF'
     const [loading, setLoading] = useState(false);
     const [result, setResult] = useState(null);
-    const [rates, setRates] = useState({ sell: 650, buy: 680 }); // Higher safe defaults
+    const [rates, setRates] = useState({ sell: 650, buy: 680 }); // Anchor: USDT/XAF
     const [selectedPaymentMethod, setSelectedPaymentMethod] = useState('MTN');
     const [hasFetchedRates, setHasFetchedRates] = useState(false);
     const [cryptoPrices, setCryptoPrices] = useState({ USDT: 1, BTC: 95000, ETH: 3500, BNB: 600, SOL: 180 });
@@ -73,6 +74,15 @@ const EnhancedRateCalculator = ({ onWhatsAppClick }) => {
         return () => clearInterval(interval);
     }, []);
 
+    // Reset inputMode when switching to USDT (no CRYPTO input mode for USDT)
+    useEffect(() => {
+        if (selectedCrypto === 'USDT' && inputMode === 'CRYPTO') {
+            setInputMode('USD');
+        }
+        setAmount('');
+        setResult(null);
+    }, [selectedCrypto]);
+
     // 4. Logic
     const calculate = (e) => {
         if (e) e.preventDefault();
@@ -84,18 +94,37 @@ const EnhancedRateCalculator = ({ onWhatsAppClick }) => {
 
         setLoading(true);
         setTimeout(() => {
-            const cryptoPrice = cryptoPrices[selectedCrypto] || 1;
-            // Use live rates if available, otherwise use initial state defaults (650/680)
-            const xafRate = mode === 'sell' ? (rates.sell || 650) : (rates.buy || 680);
+            const P = cryptoPrices[selectedCrypto] || 1; // Coin Price in USD
+            const R = mode === 'sell' ? (rates.sell || 650) : (rates.buy || 680); // Anchor Rate (XAF/USDT)
             
-            const totalXAF = num * cryptoPrice * xafRate;
+            let A; // usdAmount
+            let xafTotal;
+            let cryptoAmount;
+
+            if (inputMode === 'USD') {
+                A = num;
+                xafTotal = Math.floor(A * R);
+                cryptoAmount = (selectedCrypto === 'USDT') ? A : (A / P);
+            } else if (inputMode === 'XAF') {
+                // Input is XAF
+                xafTotal = Math.floor(num);
+                A = xafTotal / R;
+                cryptoAmount = (selectedCrypto === 'USDT') ? A : (A / P);
+            } else {
+                // Input is CRYPTO (raw coin amount)
+                cryptoAmount = num;
+                A = (selectedCrypto === 'USDT') ? num : (num * P);
+                xafTotal = Math.floor(A * R);
+            }
             
             setResult({
-                xafValue: totalXAF,
-                cryptoAmount: num,
+                xafValue: xafTotal,
+                cryptoAmount: parseFloat(cryptoAmount.toFixed(8)),
+                usdValue: A,
                 symbol: selectedCrypto,
-                cryptoPrice,
-                xafRate,
+                cryptoPrice: P,
+                xafRate: R,
+                unitRateXaf: Math.floor(P * R),
                 paymentMethod: selectedPaymentMethod
             });
             setLoading(false);
@@ -196,17 +225,50 @@ const EnhancedRateCalculator = ({ onWhatsAppClick }) => {
 
                         {/* Amount Input */}
                         <div className="mb-8 space-y-2">
-                            <label className="text-[10px] font-black text-text-muted uppercase tracking-[0.2em] mb-4 block underline decoration-primary/30 underline-offset-4">Enter Amount to {mode === 'sell' ? 'Sell' : 'Buy'}</label>
+                            <div className="flex justify-between items-end mb-4">
+                                <label className="text-[10px] font-black text-text-muted uppercase tracking-[0.2em] block underline decoration-primary/30 underline-offset-4">
+                                    Enter Amount to {mode === 'sell' ? 'Sell' : 'Buy'}
+                                </label>
+                                <div className="flex bg-white/5 p-1 rounded-none border border-white/10 gap-1">
+                                    <button 
+                                        onClick={() => { setInputMode('USD'); setAmount(''); setResult(null); }}
+                                        className={`px-3 py-1 text-[8px] font-black uppercase transition-all ${inputMode === 'USD' ? 'bg-primary text-black' : 'text-white/40 hover:text-white'}`}
+                                    >
+                                        USD
+                                    </button>
+                                    <button 
+                                        onClick={() => { setInputMode('XAF'); setAmount(''); setResult(null); }}
+                                        className={`px-3 py-1 text-[8px] font-black uppercase transition-all ${inputMode === 'XAF' ? 'bg-primary text-black' : 'text-white/40 hover:text-white'}`}
+                                    >
+                                        XAF
+                                    </button>
+                                    {selectedCrypto !== 'USDT' && (
+                                        <button 
+                                            onClick={() => { setInputMode('CRYPTO'); setAmount(''); setResult(null); }}
+                                            className={`px-3 py-1 text-[8px] font-black uppercase transition-all ${inputMode === 'CRYPTO' ? 'bg-primary text-black' : 'text-white/40 hover:text-white'}`}
+                                        >
+                                            {selectedCrypto}
+                                        </button>
+                                    )}
+                                </div>
+                            </div>
                             <div className="relative">
                                 <input
                                     type="number"
                                     value={amount}
                                     onChange={(e) => { setAmount(e.target.value); setResult(null); }}
-                                    placeholder="0.00"
-                                    className="w-full bg-white/10 border border-white/20 p-6 text-2xl font-black text-white outline-none focus:border-primary focus:bg-white/15 transition-all pr-28 placeholder:text-white/60"
+                                    placeholder={inputMode === 'USD' ? 'Amount in USD' : inputMode === 'XAF' ? 'Amount in XAF' : `Amount in ${selectedCrypto}`}
+                                    className="w-full bg-white/10 border border-white/20 p-6 text-2xl font-black text-white outline-none focus:border-primary focus:bg-white/15 transition-all pr-28 placeholder:text-white/40"
                                 />
-                                <span className="absolute right-6 top-1/2 -translate-y-1/2 text-primary font-black uppercase text-sm tracking-widest opacity-80">{selectedCrypto}</span>
+                                <span className="absolute right-6 top-1/2 -translate-y-1/2 text-primary font-black uppercase text-sm tracking-widest opacity-80">
+                                    {inputMode === 'CRYPTO' ? selectedCrypto : inputMode}
+                                </span>
                             </div>
+                            {selectedCrypto !== 'USDT' && (
+                                <p className="text-[9px] font-bold text-text-muted uppercase tracking-widest mt-2 flex justify-between">
+                                    <span className="opacity-50">1 {selectedCrypto} = {cryptoPrices[selectedCrypto] ? `$${cryptoPrices[selectedCrypto].toLocaleString()}` : '…'}</span>
+                                </p>
+                            )}
                         </div>
 
                         <button
@@ -249,11 +311,11 @@ const EnhancedRateCalculator = ({ onWhatsAppClick }) => {
                                     
                                     <div className="flex justify-between mt-8 text-[10px] font-black tracking-widest uppercase text-text-muted">
                                         <div className="text-left">
-                                            <p className="opacity-50 mb-1">Market Price</p>
-                                            <p className="text-white">${result.cryptoPrice.toLocaleString()}</p>
+                                            <p className="opacity-50 mb-1">{selectedCrypto} Rate</p>
+                                            <p className="text-white">{result.unitRateXaf.toLocaleString()} XAF</p>
                                         </div>
                                         <div className="text-right">
-                                            <p className="opacity-50 mb-1">Zapto Rate</p>
+                                            <p className="opacity-50 mb-1">Anchor Rate</p>
                                             <p className="text-white">{result.xafRate} XAF/$</p>
                                         </div>
                                     </div>
@@ -263,11 +325,12 @@ const EnhancedRateCalculator = ({ onWhatsAppClick }) => {
                                     whileTap={{ scale: 0.98 }}
                                     onClick={() => onWhatsAppClick(`Hey Zaptopay VIP! ⚡ I just calculated a trade:
 - Amount: ${result.cryptoAmount} ${result.symbol}
-- Service: ${mode === 'sell' ? 'Selling to Zaptopay' : 'Buying from Zaptopay'}
-- Payout Method: ${result.paymentMethod}
-- Estimated XAF: ${Math.round(result.xafValue).toLocaleString()}
+- Serving: ${mode === 'sell' ? 'I am Selling Crypto' : 'I am Buying Crypto'}
+- Network/Method: ${result.paymentMethod}
+- Final Settlement: ${result.xafValue.toLocaleString()} XAF
+- Using Anchor Rate: ${result.xafRate} XAF/$
 
-I want to finish this now! 🚀`)}
+I want to finalize this now! 🚀`)}
                                     className="w-full py-6 bg-[#00ff88] text-black font-black text-sm uppercase tracking-[0.18em] flex items-center justify-center gap-4 hover:bg-white transition-all duration-700 shadow-[0_0_30px_rgba(0,255,136,0.6)] relative overflow-hidden group animate-pulse-whatsapp"
                                 >
                                     <div className="w-8 h-8 rounded-full bg-black/10 flex items-center justify-center">

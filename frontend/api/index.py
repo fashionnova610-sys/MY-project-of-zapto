@@ -1,10 +1,9 @@
 from fastapi import FastAPI, APIRouter, HTTPException, Depends, Header, Response
 from starlette.middleware.cors import CORSMiddleware
-from supabase import create_client, Client
 import os
 import logging
 from pydantic import BaseModel, Field
-from typing import List, Optional
+from typing import Optional
 import uuid
 from datetime import datetime, timezone
 import hashlib
@@ -15,38 +14,45 @@ import json
 # Setup logging
 logging.basicConfig(level=logging.INFO)
 
-# Supabase connection - Environment variables are injected by Vercel
-supabase_url = os.environ.get("SUPABASE_URL", "https://flpxaxovqcpxzyotnvwe.supabase.co")
-supabase_key = os.environ.get("SUPABASE_KEY")
+# Supabase connection via REST API (no native SDK needed)
+SUPABASE_URL = os.environ.get("SUPABASE_URL", "https://flpxaxovqcpxzyotnvwe.supabase.co")
+SUPABASE_KEY = os.environ.get("SUPABASE_KEY", "").strip()
 
-if not supabase_key:
-    logging.error("SUPABASE_KEY not set in environment!")
-    # Fallback to the public key for limited functionality if necessary, 
-    # but the 'Rosvel' persona requires the full key.
-    supabase_key = "sb_publishable_ftR4a1zz0RU79mG2INJEPw_-OjFQrdq"
+if not SUPABASE_KEY:
+    SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZscHhheG92cWNweHp5b3RudndlIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQ3MDY2MzksImV4cCI6MjA5MDI4MjYzOX0.gvUi7PFSlFA96QzLzYiR5zhmDwADawDf2T9PDRnMmLQ"
 
-supabase: Client = create_client(supabase_url, supabase_key)
+SUPABASE_REST = f"{SUPABASE_URL}/rest/v1"
+SUPABASE_HEADERS = {
+    "apikey": SUPABASE_KEY,
+    "Authorization": f"Bearer {SUPABASE_KEY}",
+    "Content-Type": "application/json",
+    "Prefer": "return=representation"
+}
 
-# Configure OpenRouter
-openrouter_api_key = os.environ.get("OPENROUTER_API_KEY")
+
+
+# Helper: Supabase REST queries
+def sb_select(table, params=None):
+    r = requests.get(f"{SUPABASE_REST}/{table}", headers=SUPABASE_HEADERS, params=params or {}, timeout=10)
+    r.raise_for_status()
+    return r.json()
+
+def sb_insert(table, data):
+    r = requests.post(f"{SUPABASE_REST}/{table}", headers=SUPABASE_HEADERS, json=data, timeout=10)
+    r.raise_for_status()
+    return r.json()
+
+def sb_delete(table, params):
+    h = {**SUPABASE_HEADERS}
+    r = requests.delete(f"{SUPABASE_REST}/{table}", headers=h, params=params, timeout=10)
+    r.raise_for_status()
+    return r.json() if r.text else []
 
 # Create the main app for Vercel
 app = FastAPI()
-
-# Create a router with the /api prefix
-# In Vercel, requests to /api/foo are routed to api/foo.py or api/index.py
-# If we use a single index.py, we handle the sub-routing here.
 api_router = APIRouter(prefix="/api")
 
 # ==================== MODELS ====================
-
-class Rate(BaseModel):
-    id: str = Field(default_factory=lambda: str(uuid.uuid4()))
-    sell_rate: float
-    buy_rate: float
-    currency: str = "USDT"
-    updated_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
-    updated_by: str = "admin"
 
 class RateUpdate(BaseModel):
     sell_rate: float
@@ -62,24 +68,12 @@ class ContactMessageCreate(BaseModel):
     email: str
     message: str
 
-class BotChatRequest(BaseModel):
-    message: str
-    session_id: Optional[str] = None
-    location: Optional[str] = "Unknown"
-
-class FAQItem(BaseModel):
-    id: str = Field(default_factory=lambda: str(uuid.uuid4()))
-    question: str
-    answer: str
-    order_index: int = 0
 
 class Testimonial(BaseModel):
-    id: str = Field(default_factory=lambda: str(uuid.uuid4()))
     name: str
     role: str = "Verified User"
     content: str
     rating: int = 5
-    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
 
 # ==================== SECURITY ====================
 
@@ -94,12 +88,12 @@ async def verify_admin_token(authorization: Optional[str] = Header(None)):
         raise HTTPException(status_code=401, detail="Unauthorized")
     
     token = authorization.replace("Bearer ", "")
-    response = supabase.table("admin_sessions").select("*").eq("token", token).execute()
+    rows = sb_select("admin_sessions", {"token": f"eq.{token}", "select": "*"})
     
-    if not response.data:
+    if not rows:
         raise HTTPException(status_code=401, detail="Invalid or expired token")
     
-    return response.data[0]
+    return rows[0]
 
 # ==================== ADMIN ROUTES ====================
 
@@ -122,7 +116,7 @@ async def admin_login(credentials: AdminLogin):
         "created_at": datetime.now(timezone.utc).isoformat()
     }
     
-    supabase.table("admin_sessions").insert(session).execute()
+    sb_insert("admin_sessions", session)
     
     return {
         "token": token,
@@ -132,7 +126,7 @@ async def admin_login(credentials: AdminLogin):
 
 @api_router.post("/admin/logout")
 async def admin_logout(session: dict = Depends(verify_admin_token)):
-    supabase.table("admin_sessions").delete().eq("token", session["token"]).execute()
+    sb_delete("admin_sessions", {"token": f"eq.{session['token']}"})
     return {"message": "Logged out successfully"}
 
 # ==================== RATE MANAGEMENT ====================
@@ -140,10 +134,14 @@ async def admin_logout(session: dict = Depends(verify_admin_token)):
 @api_router.get("/rates/current")
 async def get_current_rates(response: Response, currency: str = "USDT"):
     response.headers["Cache-Control"] = "no-cache, no-store, must-revalidate"
-    res = supabase.table("rates").select("*").eq("currency", currency.upper()).order("created_at", desc=True).limit(1).execute()
+    rows = sb_select("rates", {
+        "currency": f"eq.{currency.upper()}",
+        "select": "*",
+        "order": "created_at.desc",
+        "limit": "1"
+    })
     
-    if not res.data:
-        # Emergency defaults
+    if not rows:
         return {
             "sell_rate": 573,
             "buy_rate": 598,
@@ -152,7 +150,7 @@ async def get_current_rates(response: Response, currency: str = "USDT"):
             "source": "emergency_fallback"
         }
     
-    return res.data[0]
+    return rows[0]
 
 @api_router.put("/admin/rates")
 async def update_rates(rate_update: RateUpdate, session: dict = Depends(verify_admin_token)):
@@ -163,13 +161,17 @@ async def update_rates(rate_update: RateUpdate, session: dict = Depends(verify_a
         "updated_at": datetime.now(timezone.utc).isoformat(),
         "updated_by": session["username"]
     }
-    result = supabase.table("rates").insert(new_rate).execute()
-    return {"message": "Protocol Synced", "rate": result.data[0] if result.data else new_rate}
+    result = sb_insert("rates", new_rate)
+    return {"message": "Protocol Synced", "rate": result[0] if result else new_rate}
 
 @api_router.get("/admin/rates/history")
 async def get_rate_history(limit: int = 50, session: dict = Depends(verify_admin_token)):
-    response = supabase.table("rates").select("*").order("created_at", desc=True).limit(limit).execute()
-    return response.data
+    rows = sb_select("rates", {
+        "select": "*",
+        "order": "created_at.desc",
+        "limit": str(limit)
+    })
+    return rows
 
 # ==================== CONTACT MESSAGES ====================
 
@@ -182,71 +184,55 @@ async def submit_contact_message(message: ContactMessageCreate):
         "status": "new",
         "created_at": datetime.now(timezone.utc).isoformat()
     }
-    supabase.table("contact_messages").insert(contact).execute()
+    sb_insert("contact_messages", contact)
     return {"message": "Message sent successfully"}
 
 @api_router.get("/admin/contacts")
 async def get_contact_messages(status: Optional[str] = None, session: dict = Depends(verify_admin_token)):
-    query = supabase.table("contact_messages").select("*")
+    params = {"select": "*", "order": "created_at.desc"}
     if status:
-        query = query.eq("status", status)
-    response = query.order("created_at", desc=True).execute()
-    return response.data
+        params["status"] = f"eq.{status}"
+    rows = sb_select("contact_messages", params)
+    return rows
 
 # ==================== FAQ MANAGEMENT ====================
 
 @api_router.get("/faq")
 async def get_faqs():
-    response = supabase.table("faqs").select("*").order("order_index", desc=False).execute()
-    return response.data
+    rows = sb_select("faqs", {"select": "*", "order": "order_index.asc"})
+    return rows
 
 # ==================== TESTIMONIALS ====================
 
 @api_router.get("/testimonials")
 async def get_testimonials(limit: int = 200):
-    response = supabase.table("testimonials").select("*").eq("approved", True).order("created_at", desc=True).limit(limit).execute()
-    return response.data
+    rows = sb_select("testimonials", {
+        "approved": "eq.true",
+        "select": "*",
+        "order": "created_at.desc",
+        "limit": str(limit)
+    })
+    return rows
 
 @api_router.post("/testimonials")
 async def submit_testimonial(testimonial: Testimonial):
-    data = testimonial.dict()
-    data["created_at"] = datetime.now(timezone.utc).isoformat()
-    data["approved"] = False
-    supabase.table("testimonials").insert(data).execute()
+    data = {
+        "name": testimonial.name,
+        "role": testimonial.role,
+        "content": testimonial.content,
+        "rating": testimonial.rating,
+        "created_at": datetime.now(timezone.utc).isoformat(),
+        "approved": False
+    }
+    sb_insert("testimonials", data)
     return {"message": "Testimonial submitted, pending review"}
 
-# ==================== WHATSAPP BOT ====================
-
-@api_router.post("/bot/chat")
-async def bot_chat(request: BotChatRequest):
-    if openrouter_api_key:
-        try:
-            # Fetch context
-            rates_res = supabase.table("rates").select("*").eq("currency", "USDT").order("created_at", desc=True).limit(1).execute()
-            latest_rate = {"sell": 573, "buy": 598}
-            if rates_res.data:
-                latest_rate = {"sell": rates_res.data[0]['sell_rate'], "buy": rates_res.data[0]['buy_rate']}
-
-            system_prompt = f"ZaptoBot v2.1 context: Sell {latest_rate['sell']}, Buy {latest_rate['buy']} XAF/USDT. Locations: Douala, Yaoundé."
-            
-            headers = {"Authorization": f"Bearer {openrouter_api_key}", "Content-Type": "application/json"}
-            payload = {
-                "model": "google/gemini-2.0-flash-001",
-                "messages": [{"role": "system", "content": system_prompt}, {"role": "user", "content": request.message}]
-            }
-            response = requests.post("https://openrouter.ai/api/v1/chat/completions", headers=headers, data=json.dumps(payload), timeout=10)
-            
-            if response.status_code == 200:
-                return {"response": response.json()['choices'][0]['message']['content'].strip(), "source": "ai"}
-        except:
-            pass
-    return {"response": "Protocol error. Please reach us on WhatsApp!", "source": "fallback"}
 
 # ==================== HEALTH ====================
 
 @api_router.get("/health")
 async def health_check():
-    return {"status": "healthy", "persona": "Rosvel", "version": "2.1.0"}
+    return {"status": "healthy", "persona": "Rosvel", "version": "2.2.0"}
 
 app.include_router(api_router)
 

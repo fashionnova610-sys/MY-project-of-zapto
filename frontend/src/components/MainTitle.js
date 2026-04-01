@@ -88,7 +88,7 @@ const MainTitle = ({ onTradeClick }) => {
                     
                     <div className="flex flex-col md:flex-row items-center justify-center gap-6 pt-8">
                         <button 
-                            onClick={() => window.scrollTo({ top: document.getElementById('rates').offsetTop - 100, behavior: 'smooth' })}
+                            onClick={() => window.scrollTo({ top: document.getElementById('market-pulse').offsetTop - 100, behavior: 'smooth' })}
                             className="relative group px-14 py-6 bg-[#00ff88] text-black font-black text-xs md:text-sm uppercase tracking-[0.3em] rounded-2xl overflow-hidden shadow-[0_0_30px_rgba(0,255,136,0.6)] hover:shadow-[0_0_50px_rgba(0,255,136,0.8)] transition-all active:scale-95 animate-pulse-whatsapp"
                         >
                             <span className="relative z-10 flex items-center gap-3">
