@@ -19,8 +19,8 @@ async def seed_data():
     # 1. Seed initial rates
     print("Adding initial exchange rates...")
     initial_rate = {
-        "sell_rate": 573.0,
-        "buy_rate": 598.0,
+        "sell_rate": 580.0,
+        "buy_rate": 605.0,
         "currency": "USDT",
         "updated_at": datetime.now(timezone.utc).isoformat(),
         "updated_by": "system"
@@ -76,12 +76,12 @@ async def seed_data():
     bot_responses = [
         {
             "trigger_keywords": ["hello", "hi", "hey", "bonjour", "salut"],
-            "response_message": "👋 Hello! Welcome to Zaptopay. I'm here to help you with crypto-to-XAF exchanges. What would you like to do today?\n\n📊 Current rates:\n🟢 Sell: 573 XAF/$\n🔴 Buy: 598 XAF/$\n\nJust tell me: 'I want to sell $X' or 'I want to buy $X'",
+            "response_message": "👋 Hello! Welcome to Zaptopay. I'm here to help you with crypto-to-XAF exchanges. What would you like to do today?\n\n📊 Current rates:\n🟢 Sell: 580 XAF/$\n🔴 Buy: 605 XAF/$\n\nJust tell me: 'I want to sell $X' or 'I want to buy $X'",
             "is_active": True
         },
         {
             "trigger_keywords": ["rate", "rates", "price", "prix", "taux"],
-            "response_message": "📊 TODAY'S LIVE RATES (USDT):\n\n🟢 YOU SELL to us: 573 XAF/$\n🔴 YOU BUY from us: 598 XAF/$\n\nRates updated daily. Ready to trade? Just tell me the amount!",
+            "response_message": "📊 TODAY'S LIVE RATES (USDT):\n\n🟢 YOU SELL to us: 580 XAF/$\n🔴 YOU BUY from us: 605 XAF/$\n\nRates updated daily. Ready to trade? Just tell me the amount!",
             "is_active": True
         },
         {
@@ -184,8 +184,8 @@ async def seed_data():
         
         timestamp = (datetime.now(timezone.utc) - timedelta(hours=hours_ago)).isoformat()
         amount_usd = round(random.uniform(50, 5000), 2)
-        rate = 573 if coin == 'USDT' else (95000 if coin == 'BTC' else 3500)
-        amount_xaf = round(amount_usd * rate)
+        USD_XAF_RATE = 580
+        amount_xaf = round(amount_usd * USD_XAF_RATE)
         
         return {
             "id": str(uuid.uuid4()),

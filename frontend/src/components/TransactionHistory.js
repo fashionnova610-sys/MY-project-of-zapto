@@ -6,29 +6,41 @@ import { API_BASE_URL } from '../utils/config';
 const TransactionHistory = () => {
     const [transactions, setTransactions] = useState([]);
     const [loading, setLoading] = useState(true);
+    const [currentRate, setCurrentRate] = useState(580); // Institutional fallback rate
 
     useEffect(() => {
-        const fetchTransactions = async () => {
+        const fetchData = async () => {
             try {
-                const response = await axios.get(`${API_BASE_URL}/transactions?limit=10`);
-                setTransactions(response.data);
+                // Fetch transactions and latest rates in parallel for real-time settlement calculation
+                const [txRes, rateRes] = await Promise.all([
+                    axios.get(`${API_BASE_URL}/transactions?limit=10`),
+                    axios.get(`${API_BASE_URL}/rates/current?currency=USDT`)
+                ]);
+                
+                if (Array.isArray(txRes.data)) {
+                    setTransactions(txRes.data);
+                }
+
+                if (rateRes.data && rateRes.data.sell_rate) {
+                    setCurrentRate(rateRes.data.sell_rate);
+                }
             } catch (error) {
-                console.error('Error fetching transactions:', error);
+                console.error('[Ledger] Sync Failed:', error);
             } finally {
                 setLoading(false);
             }
         };
 
-        fetchTransactions();
-        const interval = setInterval(fetchTransactions, 30000);
+        fetchData();
+        const interval = setInterval(fetchData, 30000);
         return () => clearInterval(interval);
     }, []);
 
-    // Fallback data if API fails
+    // Fallback data if API fails or for initial load
     const fallbackTX = [
-        { id: 'ZAP_A1', tx_hash: '0x8f2d...b9c1', amount_usd: 1250, amount_xaf: 750000, coin: 'USDT', status: 'COMPLETED', created_at: new Date().toISOString() },
-        { id: 'ZAP_B2', tx_hash: '0x3e1a...1f2e', amount_usd: 50, amount_xaf: 30000, coin: 'BTC', status: 'COMPLETED', created_at: new Date(Date.now() - 1000 * 60 * 5).toISOString() },
-        { id: 'ZAP_C3', tx_hash: '0x9d1c...8c2b', amount_usd: 300, amount_xaf: 180000, coin: 'ETH', status: 'COMPLETED', created_at: new Date(Date.now() - 1000 * 60 * 12).toISOString() }
+        { id: 'ZAP_A1', tx_hash: '0x8f2d...b9c1', amount_usd: 1250, coin: 'USDT', status: 'COMPLETED', created_at: new Date().toISOString() },
+        { id: 'ZAP_B2', tx_hash: '0x3e1a...1f2e', amount_usd: 50, coin: 'BTC', status: 'COMPLETED', created_at: new Date(Date.now() - 1000 * 60 * 5).toISOString() },
+        { id: 'ZAP_C3', tx_hash: '0x9d1c...8c2b', amount_usd: 300, coin: 'ETH', status: 'COMPLETED', created_at: new Date(Date.now() - 1000 * 60 * 12).toISOString() }
     ];
 
     const maskHash = (hash, coin) => {
@@ -99,39 +111,45 @@ const TransactionHistory = () => {
                                 </tr>
                             </thead>
                             <tbody>
-                                {displayTransactions.map((tx, i) => (
-                                    <tr key={tx?.id || i} className="border-b border-white/5 hover:bg-white/5 transition-all group">
-                                        <td className="p-6 font-mono text-[11px] text-primary/80 group-hover:text-primary transition-colors">
-                                            {maskHash(tx?.tx_hash, tx?.coin)}
-                                        </td>
-                                        <td className="p-6">
-                                            <span className={`px-2 py-1 rounded bg-white/5 border border-white/10 font-bold text-[9px] tracking-widest uppercase ${parseFloat(tx?.amount_usd || 0) > 1000 ? 'text-primary border-primary/20' : 'text-slate-400'}`}>
-                                                {parseFloat(tx?.amount_usd || 0) > 1000 ? 'INSTITUTION_OTC' : 'PEER_SETTLEMENT'}
-                                            </span>
-                                        </td>
-                                        <td className="p-6">
-                                            <div className="flex flex-col">
-                                                <span className="font-black text-sm text-white">${parseFloat(tx?.amount_usd || 0).toLocaleString()}</span>
-                                                <span className="text-[10px] text-text-muted font-bold opacity-50">≈ {parseFloat(tx?.amount_xaf || 0).toLocaleString()} XAF</span>
-                                            </div>
-                                        </td>
-                                        <td className="p-6">
-                                            <div className="flex items-center gap-2 font-black text-[11px] text-white/90">
-                                                <div className={`w-1.5 h-1.5 rounded-full animate-pulse ${tx?.coin === 'USDT' ? 'bg-emerald-500' : tx?.coin === 'BTC' ? 'bg-orange-500' : 'bg-primary'}`}></div>
-                                                {tx?.coin || 'USDT'}
-                                            </div>
-                                        </td>
-                                        <td className="p-6">
-                                            <div className="flex items-center gap-1.5 px-3 py-1 bg-emerald-500/10 border border-emerald-500/20 rounded-full w-fit">
-                                                <div className="w-1 h-1 bg-emerald-500 rounded-full"></div>
-                                                <span className="text-[9px] font-black text-emerald-500 uppercase tracking-widest">Confirmed</span>
-                                            </div>
-                                        </td>
-                                        <td className="p-6 text-[10px] font-bold text-text-muted group-hover:text-white transition-colors">
-                                            {formatTimeAgo(tx?.created_at)}
-                                        </td>
-                                    </tr>
-                                ))}
+                                {displayTransactions.map((tx, i) => {
+                                    const usdAmount = parseFloat(tx?.amount_usd || 0);
+                                    // Calculate settlement based on current institutional rate
+                                    const xafSettlement = Math.round(usdAmount * currentRate);
+                                    
+                                    return (
+                                        <tr key={tx?.id || i} className="border-b border-white/5 hover:bg-white/5 transition-all group">
+                                            <td className="p-6 font-mono text-[11px] text-primary/80 group-hover:text-primary transition-colors">
+                                                {maskHash(tx?.tx_hash, tx?.coin)}
+                                            </td>
+                                            <td className="p-6">
+                                                <span className={`px-2 py-1 rounded bg-white/5 border border-white/10 font-bold text-[9px] tracking-widest uppercase ${usdAmount > 1000 ? 'text-primary border-primary/20' : 'text-slate-400'}`}>
+                                                    {usdAmount > 1000 ? 'INSTITUTION_OTC' : 'PEER_SETTLEMENT'}
+                                                </span>
+                                            </td>
+                                            <td className="p-6">
+                                                <div className="flex flex-col">
+                                                    <span className="font-black text-sm text-white">${usdAmount.toLocaleString()}</span>
+                                                    <span className="text-[10px] text-text-muted font-bold opacity-50">≈ {xafSettlement.toLocaleString()} XAF</span>
+                                                </div>
+                                            </td>
+                                            <td className="p-6">
+                                                <div className="flex items-center gap-2 font-black text-[11px] text-white/90">
+                                                    <div className={`w-1.5 h-1.5 rounded-full animate-pulse ${tx?.coin === 'USDT' ? 'bg-emerald-500' : tx?.coin === 'BTC' ? 'bg-orange-500' : 'bg-primary'}`}></div>
+                                                    {tx?.coin || 'USDT'}
+                                                </div>
+                                            </td>
+                                            <td className="p-6">
+                                                <div className="flex items-center gap-1.5 px-3 py-1 bg-emerald-500/10 border border-emerald-500/20 rounded-full w-fit">
+                                                    <div className="w-1 h-1 bg-emerald-500 rounded-full"></div>
+                                                    <span className="text-[9px] font-black text-emerald-500 uppercase tracking-widest">Confirmed</span>
+                                                </div>
+                                            </td>
+                                            <td className="p-6 text-[10px] font-bold text-text-muted group-hover:text-white transition-colors">
+                                                {formatTimeAgo(tx?.created_at)}
+                                            </td>
+                                        </tr>
+                                    );
+                                })}
                             </tbody>
                         </table>
                     </div>

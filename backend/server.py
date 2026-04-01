@@ -178,8 +178,8 @@ async def get_current_rates(response: Response, currency: str = "USDT"):
     if not res.data:
         logging.warning(f"[Rates] No data found in database for {currency}. Serving emergency defaults.")
         # Minimal emergency defaults only if DB is empty
-        defaults = {"USDT": {"sell": 573, "buy": 598}, "BTC": {"sell": 570, "buy": 605}}
-        val = defaults.get(currency.upper(), {"sell": 573, "buy": 598})
+        defaults = {"USDT": {"sell": 580, "buy": 605}, "BTC": {"sell": 575, "buy": 610}}
+        val = defaults.get(currency.upper(), {"sell": 580, "buy": 605})
         return {
             "sell_rate": val["sell"],
             "buy_rate": val["buy"],
@@ -338,7 +338,7 @@ async def bot_chat(request: BotChatRequest):
         try:
             # Fetch current rates for context
             latest_rate_res = supabase.table("rates").select("*").eq("currency", "USDT").order("created_at", desc=True).limit(1).execute()
-            latest_rate = {"sell": 573, "buy": 598}
+            latest_rate = {"sell": 580, "buy": 605}
             if latest_rate_res.data:
                 latest_rate = {"sell": latest_rate_res.data[0]['sell_rate'], "buy": latest_rate_res.data[0]['buy_rate']}
 
