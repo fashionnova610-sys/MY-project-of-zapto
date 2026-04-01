@@ -143,8 +143,8 @@ async def get_current_rates(response: Response, currency: str = "USDT"):
     
     if not rows:
         return {
-            "sell_rate": 573,
-            "buy_rate": 598,
+            "sell_rate": 580,
+            "buy_rate": 605,
             "currency": currency.upper(),
             "updated_at": datetime.now(timezone.utc).isoformat(),
             "source": "emergency_fallback"

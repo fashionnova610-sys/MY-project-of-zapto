@@ -1,4 +1,4 @@
-# 🎉 Zaptopay Complete System Documentation (v2.0.30 'Robot Infiltrator')
+# 🎉 Zaptopay Complete System Documentation (v2.2.0 'Institutional Hybrid')
 
 ## 🔐 Admin Access
 
@@ -88,8 +88,8 @@ GET /api/rates/current
 
 ```json
 {
-  "sell_rate": 573,
-  "buy_rate": 598,
+  "sell_rate": 580,
+  "buy_rate": 605,
   "currency": "USDT",
   "updated_at": "2025-03-28T12:00:00Z"
 }
@@ -154,8 +154,8 @@ Authorization: Bearer <token>
 Content-Type: application/json
 
 {
-  "sell_rate": 575,
-  "buy_rate": 600,
+  "sell_rate": 580,
+  "buy_rate": 605,
   "currency": "USDT"
 }
 ```
@@ -207,7 +207,7 @@ Content-Type: application/json
 
 ---
 
-## 📊 Release Notes - v2.0.30 'Robot Infiltrator'
+## 📊 Release Notes - v2.2.0 'Institutional Hybrid'
 
 1. **Spline Occlusion Fix**: Resolved hero background visibility by removing opaque section containers.
 2. **Bot Sync**: WhatsApp Bot now pulls live rates directly from the Supabase backend.
@@ -224,6 +224,6 @@ Content-Type: application/json
 
 ---
 
-**Last Updated**: March 28, 2026
-**Version**: 2.0.30
+**Last Updated**: April 1, 2026
+**Version**: 2.2.0
 **Status**: 🚀 PRODUCTION READY
