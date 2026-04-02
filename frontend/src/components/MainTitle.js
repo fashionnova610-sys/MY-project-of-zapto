@@ -38,6 +38,7 @@ const MainTitle = ({ onTradeClick }) => {
         <section 
             id="home" 
             className="relative min-h-screen flex items-center justify-center pt-20 pb-20 overflow-hidden"
+            style={{ touchAction: 'pan-y' }}
             onMouseMove={handleMouseMove}
             onMouseLeave={handleMouseLeave}
         >

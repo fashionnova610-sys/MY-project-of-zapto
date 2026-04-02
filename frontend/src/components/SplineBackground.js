@@ -10,14 +10,15 @@ const SplineBackground = () => {
                     <div className="w-10 h-10 border-4 border-primary border-t-transparent rounded-full animate-spin"></div>
                 </div>
             }>
-                <div className="w-full h-full optimize-gpu" style={{ contain: 'strict' }}>
-                    <Spline 
-                        scene="https://prod.spline.design/W14rKqOCv-ujjO2H/scene.splinecode" 
-                        className="w-full h-full pointer-events-auto"
+                <div className="w-full h-full optimize-gpu" style={{ contain: 'strict', touchAction: 'pan-y', pointerEvents: 'none' }}>
+                    <Spline
+                        scene="https://prod.spline.design/W14rKqOCv-ujjO2H/scene.splinecode"
+                        className="w-full h-full"
+                        style={{ pointerEvents: 'none', touchAction: 'pan-y' }}
                     />
                 </div>
             </Suspense>
-            
+
             {/* Ambient Overlay to blend with Monolith theme */}
             <div className="absolute inset-0 bg-gradient-to-b from-black via-transparent to-black pointer-events-none"></div>
         </div>

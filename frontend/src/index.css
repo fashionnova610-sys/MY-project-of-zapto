@@ -6,6 +6,8 @@
 
 html {
   transition: filter 0.5s ease;
+  overscroll-behavior: none;
+  -webkit-overflow-scrolling: touch;
 }
 
 :root {
@@ -67,6 +69,14 @@ body {
   font-family: 'Space Grotesk', sans-serif;
   overflow-x: hidden;
   min-height: 100vh;
+  overscroll-behavior: none;
+}
+
+/* Mobile: background-attachment:fixed causes severe jank on iOS/Android */
+@media (max-width: 768px) {
+  body {
+    background-attachment: scroll;
+  }
 }
 
 h1, h2, h3, .heading-font {
@@ -182,6 +192,13 @@ section {
   border-radius: 50%;
   z-index: -1;
   opacity: 0.3;
+}
+
+/* Disable fixed blobs on mobile - causes scroll jank */
+@media (max-width: 768px) {
+  .bg-blob {
+    display: none;
+  }
 }
 
 .bg-grid {
