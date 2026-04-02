@@ -1,0 +1,51 @@
+/* 2026 Design Utilities */
+.gradient-text {
+  background: var(--grad-main);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.text-glow-primary {
+  text-shadow: 0 0 10px var(--primary-glow);
+}
+
+.text-glow-secondary {
+  text-shadow: 0 0 10px var(--secondary-glow);
+}
+
+/* Page Transitions & Layout */
+.App {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+main {
+  flex: 1;
+}
+
+/* Animations */
+@keyframes pulse-slow {
+  0%, 100% { opacity: 0.3; transform: scale(1); }
+  50% { opacity: 0.5; transform: scale(1.1); }
+}
+
+.bg-blob-animate {
+  animation: pulse-slow 10s ease-in-out infinite;
+}
+
+/* 3D Effects */
+.perspective-1000 {
+  perspective: 1000px;
+}
+
+.preserve-3d {
+  transform-style: preserve-3d;
+}
+
+/* Selection */
+::selection {
+  background: var(--primary);
+  color: var(--bg-deep);
+}

@@ -82,3 +82,6 @@ android-sdk/
 # Environment files
 *.env
 *.env.*
+
+# Local Netlify folder
+.netlify
