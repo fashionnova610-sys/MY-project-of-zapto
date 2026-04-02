@@ -1,0 +1,257 @@
+@import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;800&family=Space+Grotesk:wght@300;400;500;600;700&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+html {
+  transition: filter 0.5s ease;
+  overscroll-behavior: none;
+  -webkit-overflow-scrolling: touch;
+}
+
+:root {
+  /* Zaptopay 'Monolith' Monochrome Palette */
+  --primary: #000000; 
+  --primary-glow: rgba(0, 0, 0, 0.1);
+  --secondary: #444444; 
+  --secondary-glow: rgba(0, 0, 0, 0.05);
+  --accent: #666666; 
+  
+  /* Light Theme Variables (Ink & Paper) */
+  --bg-deep: #FFFFFF;
+  --bg-card: rgba(255, 255, 255, 0.95);
+  --text-main: #000000; 
+  --text-muted: #444444;
+  --glass-border: rgba(0, 0, 0, 0.15);
+  --shadow-main: 0 10px 40px rgba(0, 0, 0, 0.05);
+  --grad-mesh: radial-gradient(at 0% 0%, rgba(200, 200, 200, 0.1) 0px, transparent 50%),
+               radial-gradient(at 100% 0%, rgba(150, 150, 150, 0.1) 0px, transparent 50%),
+               radial-gradient(at 50% 100%, rgba(100, 100, 100, 0.05) 0px, transparent 50%);
+}
+
+.dark {
+  /* Dark Theme Variables */
+  --bg-deep: #000000; 
+  --bg-card: rgba(10, 10, 10, 0.7);
+  --text-main: #FFFFFF;
+  --text-muted: #CCCCCC; /* Brightened from #AAAAAA for better readability */
+  --glass-border: rgba(255, 255, 255, 0.15); /* Slightly stronger border */
+  --shadow-main: 0 10px 40px rgba(0, 0, 0, 0.4);
+  --grad-mesh: radial-gradient(at 0% 0%, rgba(255, 255, 255, 0.05) 0px, transparent 50%),
+               radial-gradient(at 100% 0%, rgba(150, 150, 150, 0.05) 0px, transparent 50%),
+               radial-gradient(at 50% 100%, rgba(100, 100, 100, 0.05) 0px, transparent 50%);
+}
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+  -webkit-font-smoothing: antialiased;
+}
+
+.optimize-gpu {
+  transform: translateZ(0);
+  backface-visibility: hidden;
+  perspective: 1000px;
+  will-change: transform, opacity;
+}
+
+.scroll-gpu {
+  will-change: transform;
+}
+
+body {
+  background-color: var(--bg-deep);
+  background-image: var(--grad-mesh);
+  background-attachment: fixed;
+  color: var(--text-main);
+  font-family: 'Space Grotesk', sans-serif;
+  overflow-x: hidden;
+  min-height: 100vh;
+  overscroll-behavior: none;
+}
+
+/* Mobile: background-attachment:fixed causes severe jank on iOS/Android */
+@media (max-width: 768px) {
+  body {
+    background-attachment: scroll;
+  }
+}
+
+h1, h2, h3, .heading-font {
+  font-family: 'Outfit', sans-serif;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+}
+
+/* Glassmorphism Utility */
+.glass {
+  background: var(--bg-card);
+  -webkit-backdrop-filter: blur(12px);
+  backdrop-filter: blur(12px);
+  border: 1px solid var(--glass-border);
+  border-radius: 20px;
+  box-shadow: var(--shadow-main);
+}
+
+.glass-hover:hover {
+  background: var(--bg-card);
+  border-color: var(--primary);
+  transform: translateY(-5px);
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* Neon Glow Utility */
+.glow-text {
+  text-shadow: 0 0 10px var(--primary-glow);
+}
+
+.glow-box {
+  box-shadow: 0 0 20px var(--primary-glow);
+}
+
+/* Animations */
+@keyframes float {
+  0% { transform: translateY(0px); }
+  50% { transform: translateY(-10px); }
+  100% { transform: translateY(0px); }
+}
+
+.animate-float {
+  animation: float 4s ease-in-out infinite;
+}
+
+@keyframes pulse-glow {
+  0%, 100% { opacity: 0.5; }
+  50% { opacity: 1; }
+}
+
+@keyframes pulse-button {
+  0% { box-shadow: 0 0 0 0 rgba(0, 255, 136, 0.4); transform: scale(1); }
+  50% { box-shadow: 0 0 0 20px rgba(0, 255, 136, 0); transform: scale(1.02); }
+  100% { box-shadow: 0 0 0 0 rgba(0, 255, 136, 0); transform: scale(1); }
+}
+
+@keyframes pulse-whatsapp {
+  0% { box-shadow: 0 0 0 0 rgba(37, 211, 102, 0.4); }
+  50% { box-shadow: 0 0 0 15px rgba(37, 211, 102, 0); }
+  100% { box-shadow: 0 0 0 0 rgba(37, 211, 102, 0); }
+}
+
+.animate-pulse-glow {
+  animation: pulse-glow 3s ease-in-out infinite;
+}
+
+.animate-pulse-button {
+  animation: pulse-button 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}
+
+.animate-pulse-whatsapp {
+  animation: pulse-whatsapp 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}
+
+/* Custom Scrollbar */
+::-webkit-scrollbar {
+  width: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: var(--bg-deep);
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--glass-border);
+  border-radius: 10px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--primary);
+}
+
+/* Responsive Container */
+.container {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 0 24px;
+}
+
+/* Base Sections */
+section {
+  padding: 100px 0;
+  position: relative;
+}
+
+/* Background Effects */
+.bg-blob {
+  position: fixed;
+  width: 500px;
+  height: 500px;
+  background: var(--primary-glow);
+  filter: blur(120px);
+  border-radius: 50%;
+  z-index: -1;
+  opacity: 0.3;
+}
+
+/* Disable fixed blobs on mobile - causes scroll jank */
+@media (max-width: 768px) {
+  .bg-blob {
+    display: none;
+  }
+}
+
+.bg-grid {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-image: 
+    linear-gradient(var(--glass-border) 1px, transparent 1px),
+    linear-gradient(90deg, var(--glass-border) 1px, transparent 1px);
+  background-size: 50px 50px;
+  z-index: -1;
+  pointer-events: none;
+}
+
+/* Custom Scrollbar for modern feel */
+::-webkit-scrollbar {
+  width: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: var(--bg-deep);
+}
+
+::-webkit-scrollbar-thumb {
+  background: #333;
+  border-radius: 10px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--primary);
+}
+
+/* Global Input Overrides for Dark Theme Visibility */
+input, textarea, select {
+  background-color: rgba(255, 255, 255, 0.08) !important;
+  color: white !important;
+  color-scheme: dark; /* Force dark browser UI for date-pickers etc */
+}
+
+input::placeholder, textarea::placeholder {
+  color: rgba(255, 255, 255, 0.5) !important;
+}
+
+/* Fix for Chrome autofill white background */
+input:-webkit-autofill,
+input:-webkit-autofill:hover, 
+input:-webkit-autofill:focus,
+textarea:-webkit-autofill,
+textarea:-webkit-autofill:hover,
+textarea:-webkit-autofill:focus {
+  -webkit-text-fill-color: white !important;
+  -webkit-box-shadow: 0 0 0px 1000px #0a0a0a inset !important;
+  transition: background-color 5000s ease-in-out 0s;
+}
