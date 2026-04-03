@@ -99,7 +99,7 @@ async def verify_admin_token(authorization: Optional[str] = Header(None)):
 
 @api_router.post("/admin/login")
 async def admin_login(credentials: AdminLogin):
-    ADMIN_USERNAME = os.environ.get("ADMIN_USERNAME", "Rosvel")
+    ADMIN_USERNAME = os.environ.get("ADMIN_USERNAME", "rosvelmelong@gmail.com")
     ADMIN_PASSWORD = os.environ.get("ADMIN_PASSWORD", "Draxx237?")
     ADMIN_PASSWORD_HASH = hash_password(ADMIN_PASSWORD)
     
