@@ -170,8 +170,8 @@ function AppContent() {
         "@context": "https://schema.org",
         "@type": "Organization",
         "name": "Zaptopay",
-        "url": "https://zaptopay.com",
-        "logo": "https://zaptopay.com/logo.png",
+        "url": "https://zaptopay.online",
+        "logo": "https://zaptopay.online/logo.png",
         "description": "Fastest and most secure Crypto-to-XAF exchange in Cameroon. Sell Bitcoin, Ethereum, and USDT instantly.",
         "sameAs": [
             "https://twitter.com/zaptopay",
@@ -209,7 +209,7 @@ function AppContent() {
                 <title>Zaptopay | Secure Crypto-to-XAF Exchange Cameroon</title>
                 <meta name="description" content="Exchange Bitcoin, USDT, and Ethereum for XAF instantly. The most trusted crypto exchange in Central Africa with live marketplace rates and verified security." />
                 <meta name="keywords" content="crypto to xaf, sell usdt cameroon, bitcoin to mobile money, zaptopay, crypto exchange africa, douala crypto, yaounde bitcoin" />
-                <link rel="canonical" href="https://zaptopay.com/" />
+                <link rel="canonical" href="https://zaptopay.online/" />
                 <meta property="og:locale" content="en_CM" />
                 <meta property="og:locale:alternate" content="fr_CM" />
                 
@@ -219,14 +219,14 @@ function AppContent() {
                     "@context": "https://schema.org",
                     "@type": "LocalBusiness",
                     "name": "Zaptopay Cameroon",
-                    "image": "https://zaptopay.com/og-image.png",
+                    "image": "https://zaptopay.online/og-image.png",
                     "address": {
                         "@type": "PostalAddress",
                         "addressLocality": "Douala",
                         "addressRegion": "Littoral",
                         "addressCountry": "CM"
                     },
-                    "url": "https://zaptopay.com",
+                    "url": "https://zaptopay.online",
                     "telephone": "+237600000000",
                     "priceRange": "$$",
                     "openingHoursSpecification": {
@@ -270,6 +270,29 @@ function AppContent() {
                             }
                         ]
                     }
+                })}</script>
+                <script type="application/ld+json">{JSON.stringify({
+                    "@context": "https://schema.org",
+                    "@type": "HowTo",
+                    "name": "How to Exchange Crypto for XAF Mobile Money",
+                    "description": "Exchange your Bitcoin, Ethereum, or USDT for Mobile Money in 3 simple steps.",
+                    "step": [
+                        {
+                            "@type": "HowToStep",
+                            "name": "Calculate",
+                            "text": "Use our live calculator to see exactly how much XAF you will receive."
+                        },
+                        {
+                            "@type": "HowToStep",
+                            "name": "Trade Preview",
+                            "text": "Review your trade payload and connect with a verified agent on WhatsApp."
+                        },
+                        {
+                            "@type": "HowToStep",
+                            "name": "Receive Funds",
+                            "text": "Get paid instantly via MTN or Orange Mobile Money with receipt."
+                        }
+                    ]
                 })}</script>
             </Helmet>
 

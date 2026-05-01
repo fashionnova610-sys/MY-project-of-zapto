@@ -41,6 +41,13 @@ const Footer = () => (
                         <li><a href="https://whatsapp.com/channel/0029VanCSucGehEDUIf3ck3W" target="_blank" rel="noopener noreferrer" className="hover:text-primary transition-colors uppercase tracking-widest font-bold block">Admin Support</a></li>
                     </ul>
                 </div>
+                <div>
+                    <h4 className="font-bold mb-6 text-white uppercase tracking-wider text-sm opacity-50">Social</h4>
+                    <ul className="space-y-4 text-text-muted text-sm">
+                        <li><a href="https://twitter.com/zaptopay" target="_blank" rel="noopener noreferrer" className="hover:text-primary transition-colors uppercase tracking-widest font-bold block">Twitter</a></li>
+                        <li><a href="https://facebook.com/zaptopay" target="_blank" rel="noopener noreferrer" className="hover:text-primary transition-colors uppercase tracking-widest font-bold block">Facebook</a></li>
+                    </ul>
+                </div>
             </div>
             <div className="pt-8 border-t border-white/5 text-center text-text-muted text-xs tracking-[0.2em] font-bold">
                 &copy; 2026 ZAPTOPAY LTD. DEVELOPED FOR THE FUTURE.

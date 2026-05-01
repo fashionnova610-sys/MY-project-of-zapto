@@ -85,3 +85,6 @@ android-sdk/
 
 # Local Netlify folder
 .netlify
+
+# AI tools
+.claude/

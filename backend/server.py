@@ -368,7 +368,7 @@ async def bot_chat(request: BotChatRequest):
             
             headers = {
                 "Authorization": f"Bearer {openrouter_api_key}",
-                "HTTP-Referer": "https://zaptopay.com", # Required for OpenRouter
+                "HTTP-Referer": "https://zaptopay.online", # Required for OpenRouter
                 "X-Title": "Zaptopay AI Agent",        # Optional for OpenRouter
                 "Content-Type": "application/json"
             }

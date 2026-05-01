@@ -81,7 +81,7 @@ const ChannelCTA = () => {
                                     rel="noopener noreferrer"
                                     className="block w-full py-6 bg-primary text-bg-deep text-center font-black text-sm uppercase tracking-[0.3em] rounded-2xl hover:scale-[1.03] active:scale-95 transition-all shadow-[0_0_40px_rgba(9,188,138,0.3)] flex items-center justify-center gap-3"
                                 >
-                                    FOLLOW NOOW
+                                    FOLLOW NOW
                                     <ArrowRight size={18} />
                                 </a>
                             </div>
